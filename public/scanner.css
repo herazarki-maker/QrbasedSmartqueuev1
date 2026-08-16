@@ -1,0 +1,170 @@
+/* 🌟 အခြေခံ ဖောင့်နှင့် Background */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f3f7fb;
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    justify-content: center;
+}
+
+/* 📱 ဖုန်း Screen ပုံစံ App Container */
+.scanner-wrapper {
+    width: 100%;
+    max-width: 450px;
+    background: #ffffff;
+    min-height: 100vh;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+}
+
+/* 🌟 အပေါ်ပိုင်း ခေါင်းစီး (Top Navigation) */
+.top-nav {
+    display: flex;
+    align-items: center;
+    padding: 25px 20px 20px;
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    color: white;
+    border-radius: 0 0 25px 25px;
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.15);
+    margin-bottom: 25px;
+}
+
+.back-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: background 0.3s;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.top-nav h2 {
+    margin: 0 0 0 15px;
+    font-size: 19px;
+    font-weight: 600;
+}
+
+/* 🌟 Scanner အလုပ်လုပ်မည့် နေရာ */
+.scanner-section {
+    padding: 10px 25px 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.scanner-title {
+    font-size: 20px;
+    color: #1e293b;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.scanner-desc {
+    font-size: 13px;
+    color: #64748b;
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+/* 📷 ကင်မရာပြမည့် ဘောင် (Camera Frame) */
+#reader {
+    width: 100%;
+    max-width: 300px;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    border: 5px solid #eff6ff;
+    background: #0f172a; /* ကင်မရာမပွင့်ခင် အမည်းရောင်ပြရန် */
+}
+
+/* Library မှ Auto ထုတ်ပေးသော ခလုတ်များကို လှအောင် ပြင်ခြင်း */
+#reader button {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-family: 'Poppins', sans-serif;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+#reader select {
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    margin-bottom: 10px;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* 🌟 အဖြေပြမည့် ကတ် (Result Card) */
+.result-card {
+    margin-top: 30px;
+    width: 100%;
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    font-weight: 500;
+    display: none; /* မူလက ဖျောက်ထားမည် */
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* အောင်မြင်သော အခြေအနေ */
+.result-card.success {
+    display: block;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #059669;
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.1);
+}
+
+/* Error ဖြစ်သော အခြေအနေ */
+.result-card.error {
+    display: block;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    box-shadow: 0 10px 25px rgba(220, 38, 38, 0.1);
+}
+/* 🌟 QR Library မှ Auto ထုတ်ပေးသော စာသားများနှင့် Link များကို လင်းလာအောင် ပြင်ခြင်း */
+#reader a {
+    color: #60a5fa !important; /* အပြာနုရောင် */
+    text-decoration: none;
+    margin-top: 15px;
+    display: none !important;
+    font-family: 'Poppins', sans-serif;
+
+}
+#reader a:hover {
+    color: #93c5fd !important;
+}
+#reader span {
+    color: #f8fafc !important; /* အဖြူရောင် */
+    font-family: 'Poppins', sans-serif;
+}
+
+/* 🌟 ဘယ်အချိန်ဖြစ်ဖြစ် ပုံဖတ်တဲ့ Link ပေါ်မလာအောင် အမြစ်ပြတ် ပိတ်ခြင်း */
+[id$="swaplink"], 
+#reader a {
+    display: none !important;
+}
+

@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Admin - Hospital Smart Queue</title>
+    <link rel="stylesheet" href="main_admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .main-content {
+            display: block !important; 
+            flex: 1;
+            width: 100%;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 15px;
+        }
+        .view-section {
+            width: 100%;
+            display: none; /* Tab များကို ပုံမှန်အားဖြင့် ဖျောက်ထားမည် */
+        }
+        .view-section.active {
+            display: block; /* Active ဖြစ်မှ ပြမည် */
+        }
+        .view-section > div > h2, 
+        .view-section > h2 {
+            display: none !important;
+        }
+        .add-staff-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+        /* Dashboard Stats Cards များအတွက် */
+        .stats-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">
+            <h2>🏥Admin</h2>
+        </div>
+       <ul class="nav-links">
+            <li class="active"><a href="#" onclick="switchTab('dashboard', this)"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="#" onclick="switchTab('patients', this)"><i class="fas fa-users-slash"></i> Patient Compliance</a></li>
+            <li><a href="#" onclick="switchTab('staff', this)"><i class="fas fa-user-md"></i> People & Staff</a></li>
+            <li><a href="#" onclick="switchTab('settings', this)"><i class="fas fa-cogs"></i> System Rules</a></li>
+        </ul>
+        <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <div>
+                <h1 id="pageTitle">Overview Dashboard</h1>
+                <p id="pageDesc">Hospital Management & Patient Compliance System</p>
+            </div>
+            <div class="admin-profile">
+                <span>👋 Welcome, Admin</span>
+            </div>
+        </header>
+
+        <div id="dashboardView" class="view-section active">
+            <div class="stats-cards-grid">
+                <div class="card">
+                    <div class="card-icon" style="background: #e0f2fe; color: #0284c7;"><i class="fas fa-users"></i></div>
+                    <div class="card-info">
+                        <h3 id="totalPatientsCount">0</h3>
+                        <p>Total Patients</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background: #dcfce7; color: #16a34a;"><i class="fas fa-user-md"></i></div>
+                    <div class="card-info">
+                        <h3 id="totalDoctorsCount">0</h3>
+                        <p>Total Doctors</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background: #fee2e2; color: #dc2626;"><i class="fas fa-calendar-check"></i></div>
+                    <div class="card-info">
+                        <h3 id="todayAppointmentsCount">0</h3>
+                        <p>Today's Appointments</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="background: #f3e8ff; color: #9333ea;"><i class="fas fa-user-nurse"></i></div>
+                    <div class="card-info">
+                        <h3 id="totalStaffCount">0</h3>
+                        <p>Hospital Staff</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recent-activities">
+                <h3><i class="fas fa-history"></i> Recent Violations & Actions</h3>
+                <table class="admin-table">
+                   <thead>
+                      <tr>
+                           <th>UID</th>
+                           <th>Status</th>
+                           <th>Actions</th>
+                           <th>Action By</th>
+                     </tr>
+                  </thead>
+                    <tbody id="recentViolationsBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="patientsView" class="view-section">
+            <div class="add-staff-container" style="justify-content: space-between;">
+                <h2>Patient Compliance</h2>
+                <input type="text" id="searchInput" onkeyup="searchPatients()" placeholder="Search by UID or Name..." style="padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; width: 300px;">
+            </div>
+            
+            <div class="recent-activities">
+                <table class="admin-table">
+                  <thead>
+                        <tr>
+                            <th>Patient UID</th>
+                            <th>Name</th>
+                            <th>Violations</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="complianceTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="staffView" class="view-section">
+            <div class="add-staff-container">
+                <h2>People & Staff</h2>
+                <div>
+                    <button class="action-btn" style="background: #16a34a; color: white; padding: 10px 15px;" onclick="openStaffModal('add')">
+                         <i class="fas fa-plus"></i> Add New Staff
+                    </button> 
+                    <button class="action-btn" style="background: #0284c7; color: white; padding: 10px 15px; margin-left: 10px;" onclick="document.getElementById('doctorModal').style.display='flex'">
+                     <i class="fas fa-plus-circle"></i> Add Doctor
+                    </button>
+                </div>
+            </div>
+            <div class="recent-activities">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Staff ID / Name</th>
+                            <th>Role</th>
+                            <th>Phone</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="staffTableBody">
+                    </tbody>
+                </table>
+                <div style="margin-top: 40px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+        <h3 style="margin-bottom: 20px; color: #334155;">👨‍⚕️ လက်ရှိ ဆရာဝန်များ စာရင်း</h3>
+        <table style="width: 100%; border-collapse: collapse; text-align: center;">
+            <thead style="background: #3b82f6; color: white;">
+                <tr>
+                    <th style="padding: 15px; border: 1px solid #bfdbfe;">Code</th>
+                    <th style="padding: 15px; border: 1px solid #bfdbfe;">အမည်</th>
+                    <th style="padding: 15px; border: 1px solid #bfdbfe;">အထူးကု</th>
+                    
+                    <th style="padding: 15px; border: 1px solid #bfdbfe;">အခန်း</th> 
+                    
+                    <th style="padding: 15px; border: 1px solid #bfdbfe;">ထိုင်မည့်ရက်</th>
+                    <th style="padding: 15px; border: 1px solid #bfdbfe;">အချိန်</th>
+                    <th style="padding: 15px; border: 1px solid #bfdbfe;">Action</th>
+                </tr>
+            </thead>
+            <tbody id="adminDoctorsTableBody">
+                </tbody>
+        </table>
+    </div>
+            </div>
+        </div>
+
+        <div id="settingsView" class="view-section">
+            <h2>System Rules</h2>
+            <p style="color: #64748b; margin-bottom: 20px;">ဆေးရုံ၏ Check-in အချိန်များနှင့် စည်းကမ်းချက်များကို ဤနေရာမှ ပြင်ဆင်နိုင်ပါသည်။</p>
+            
+            <div class="settings-card">
+                <div class="form-group">
+                    <label>QR Check-in Open (Minutes before):</label>
+                    <input type="number" id="setting_qr_open" class="setting-input" placeholder="e.g. 30">
+                    <small>Booking အချိန်မတိုင်မီ QR ဖတ်ရန် ကြိုတင်ခွင့်ပြုမည့် မိနစ်</small>
+                </div>
+              <!-- Max Violations Input ၏ အပေါ် သို့မဟုတ် အောက်တွင် ဤအကွက်ကို ထည့်ပါ -->
+               <div class="input-group">
+                       <label>Max Cancellations per day:</label>
+                       <input type="number" id="maxCancellations" class="setting-input" placeholder="eg.2">
+                       <small>လူနာတစ်ဦးလျှင် တစ်ရက်အတွင်း အများဆုံး Cancel ပြုလုပ်ခွင့်</small>
+              </div>
+                <div class="form-group">
+                    <label>Max Violations before Lock:</label>
+                    <input type="number" id="setting_max_violations" class="setting-input" placeholder="e.g. 2">
+                    <small>Account Lock မချမီ ခွင့်ပြုမည့် ဖောက်ဖျက်မှု အကြိမ်အရေအတွက်</small>
+                </div>
+
+                <button class="action-btn" onclick="saveSystemSettings()" style="background: #3b82f6; color: white; padding: 10px 20px; font-size: 14px; margin-top: 10px;">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div> 
+
+   <!-- 🌟 Staff Modal အစ 🌟 -->
+    <div id="staffModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; width: 400px; max-width: 90%; max-height: 90vh; overflow-y: auto;">
+            <h3 id="staffModalTitle" style="margin-bottom: 20px;">➕ Add New Staff</h3>
+            
+            <input type="hidden" id="staffId">
+            <input type="hidden" id="staffMode"> 
+            
+            <div class="form-group">
+                <label>Name / Username:</label>
+                <input type="text" id="staffName" class="setting-input" placeholder="e.g. asst_aung">
+            </div>
+            
+           
+            <div class="form-group">
+                <label>Phone Number:</label>
+                <input type="text" id="staffPhone" class="setting-input" placeholder="09xxxxxxxxx">
+            </div>
+            
+            <div class="form-group" id="staffPasswordGroup">
+                <label>Password:</label>
+                <input type="text" id="staffPassword" class="setting-input" placeholder="Enter password">
+            </div>
+
+           <!-- 🌟 Role Group ကို အဖွင့်အပိတ် လုပ်နိုင်ရန် id ပေးထားသည် -->
+           <div class="form-group" id="staffRoleGroup">
+                <label>Role:</label>
+                <select id="staffRole" class="setting-input">
+                    <option value="Admin Counter">Counter</option>
+                    <option value="Doctor Assistant">Doctor Assistant</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="doctorSelectGroup" style="display: none;">
+                <label>Assigned Doctor (For Assistant Only):</label>
+                <select id="staffDoctor" class="setting-input"></select>
+            </div>
+
+            <div class="form-group">
+                <label>Status:</label>
+                <select id="staffStatus" class="setting-input">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="action-btn" onclick="saveStaff()" style="background: #3b82f6; color: white; padding: 10px 20px; border-radius: 6px;">Save changes</button>
+                <button class="action-btn" onclick="document.getElementById('staffModal').style.display='none'" style="background: #94a3b8; color: white; padding: 10px 20px; border-radius: 6px;">Cancel</button>
+            </div>
+        </div>
+    </div>
+   
+
+  <!-- 🌟 Add Doctor Modal အစ (အတိုချုပ်) 🌟 -->
+    <div id="doctorModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; width: 400px; max-width: 90%;">
+            <h3 style="margin-bottom: 20px;">👨‍⚕️ Add New Doctor</h3>
+            
+            <div class="form-group">
+                <label>Doctor Code :</label>
+                <input type="text" id="newDrCode" class="setting-input" placeholder="e.g. MK">
+                <small>အင်္ဂလိပ်စာလုံး အတိုကောက် (ဥပမာ - Myo Kyaw အတွက် MK)</small>
+            </div>
+            
+            <div class="form-group">
+                <label>Doctor Name:</label>
+                <input type="text" id="newDrName" class="setting-input" placeholder="e.g. Dr. Myo Kyaw">
+            </div>
+
+            <div class="form-group">
+                <label>Specialty (အထူးကု):</label>
+                <input type="text" id="newDrSpecialty" class="setting-input" placeholder="e.g. Heart Specialist">
+            </div>
+            
+            <div class="form-group">
+                <label>Doctor Experience:</label>
+                <input type="text" id="newExperience" class="setting-input" placeholder="e.g. 3 Years">
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button class="action-btn" onclick="document.getElementById('doctorModal').style.display='none'" style="background: #94a3b8; color: white; padding: 10px 20px; border-radius: 6px;">Cancel</button>
+                <button class="action-btn" onclick="saveNewDoctor()" style="background: #3b82f6; color: white; padding: 10px 20px; border-radius: 6px;">Save Doctor</button>
+            </div>
+        </div>
+    </div>
+    <!-- 🌟 Add Doctor Modal အဆုံး 🌟 -->
+   <div id="patientInfoModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1050; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; width: 350px; max-width: 90%; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #1e293b;"><i class="fas fa-id-card" style="color: #3b82f6;"></i> Patient Info</h3>
+                <button onclick="document.getElementById('patientInfoModal').style.display='none'" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #94a3b8;">&times;</button>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <p style="margin: 0 0 5px 0; color: #64748b; font-size: 13px;">Name</p>
+                <p id="infoName" style="margin: 0; font-size: 17px; font-weight: 600; color: #0f172a;">-</p>
+            </div>
+            <div style="display: flex; gap: 20px; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <p style="margin: 0 0 5px 0; color: #64748b; font-size: 13px;">Age</p>
+                    <p id="infoAge" style="margin: 0; font-size: 16px; font-weight: 500; color: #334155;">-</p>
+                </div>
+                <div style="flex: 1;">
+                    <p style="margin: 0 0 5px 0; color: #64748b; font-size: 13px;">Phone</p>
+                    <p id="infoPhone" style="margin: 0; font-size: 16px; font-weight: 500; color: #334155;">-</p>
+                </div>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <p style="margin: 0 0 5px 0; color: #64748b; font-size: 13px;">Address</p>
+                <p id="infoAddress" style="margin: 0; font-size: 15px; font-weight: 500; color: #334155; line-height: 1.5;">-</p>
+            </div>
+            
+            <div style="margin-top: 25px; text-align: right;">
+                <button class="action-btn" onclick="document.getElementById('patientInfoModal').style.display='none'" style="background: #f1f5f9; color: #475569; padding: 8px 20px; border: 1px solid #cbd5e1;">Close</button>
+            </div>
+        </div>
+    </div>
+    <div id="smartAlertModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 9999; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; backdrop-filter: blur(3px);">
+        <div id="smartAlertBox" style="background: white; padding: 25px 30px; border-radius: 16px; width: 320px; max-width: 80%; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+            <div id="smartAlertIcon" style="font-size: 50px; margin-bottom: 15px;"></div>
+            <h3 id="smartAlertTitle" style="margin: 0 0 10px 0; color: #1e293b; font-size: 20px; font-weight: 700;"></h3>
+            <p id="smartAlertMessage" style="margin: 0 0 25px 0; color: #64748b; font-size: 15px; line-height: 1.5;"></p>
+            <button onclick="closeSmartAlert()" style="background: #3b82f6; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 15px; width: 100%; transition: background 0.2s;">OK</button>
+        </div>
+    </div>
+    <div id="smartConfirmModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 9999; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; backdrop-filter: blur(3px);">
+        <div id="smartConfirmBox" style="background: white; padding: 25px 30px; border-radius: 16px; width: 350px; max-width: 80%; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+            <div style="font-size: 50px; margin-bottom: 15px; color: #f59e0b;"><i class="fas fa-question-circle"></i></div>
+            <h3 style="margin: 0 0 10px 0; color: #1e293b; font-size: 20px; font-weight: 700;">သေချာပြီလား?</h3>
+            <p id="smartConfirmMessage" style="margin: 0 0 25px 0; color: #64748b; font-size: 15px; line-height: 1.5;"></p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="btnConfirmYes" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; flex: 1; transition: background 0.2s;">Yes (လုပ်မည်)</button>
+                <button id="btnConfirmNo" style="background: #e2e8f0; color: #475569; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; flex: 1; transition: background 0.2s;">Cancel</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="editDoctorModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000;">
+        <div style="background: white; padding: 30px; border-radius: 12px; width: 90%; max-width: 450px;">
+            <h3 style="margin-bottom: 20px;">✏️ ဆရာဝန်အချက်အလက် ပြင်ရန်</h3>
+            <input type="hidden" id="editDocCode">
+            <input type="text" id="editDocName" placeholder="အမည်" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px;">
+            <input type="text" id="editDocSpecialty" placeholder="အထူးကု (ဥပမာ - အထွေထွေ)" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px;">
+            <input type="text" id="editDocExperience" placeholder="လုပ်သက် (ဥပမာ - ၅ နှစ်)" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px;"><label style="display: block; margin-bottom: 8px; font-size: 14px; color: #475569; font-weight: bold;">ထိုင်မည့်ရက်များ ရွေးချယ်ရန်:</label>
+            <div id="editDaysContainer" class="days-selector">
+                <label><input type="checkbox" value="တနင်္လာ"> <span>တနင်္လာ</span></label>
+                <label><input type="checkbox" value="အင်္ဂါ"> <span>အင်္ဂါ</span></label>
+                <label><input type="checkbox" value="ဗုဒ္ဓဟူး"> <span>ဗုဒ္ဓဟူး</span></label>
+                <label><input type="checkbox" value="ကြာသပတေး"> <span>ကြာသပတေး</span></label>
+                <label><input type="checkbox" value="သောကြာ"> <span>သောကြာ</span></label>
+                <label><input type="checkbox" value="စနေ"> <span>စနေ</span></label>
+                <label><input type="checkbox" value="တနင်္ဂနွေ"> <span>တနင်္ဂနွေ</span></label>
+            </div>
+            <input type="text" id="editDocWorkingTime" placeholder="အချိန် (ဥပမာ - 09:00 AM - 12:00 PM)" style="width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 6px;">
+            <input type="text" id="editDocRoomNumber" placeholder="Room Number (e.g., Room 1)" style="width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 6px;">
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button onclick="document.getElementById('editDoctorModal').style.display='none'" style="padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+                <button onclick="editDoctor()" style="padding: 10px 20px; background: #198754; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function logout() {
+            localStorage.clear();
+            window.location.href = "/";
+        }
+
+        function switchTab(tabId, element) {
+            const views = document.querySelectorAll('.view-section');
+            views.forEach(view => view.classList.remove('active'));
+
+            document.getElementById(tabId + 'View').classList.add('active');
+
+            const links = document.querySelectorAll('.nav-links li');
+            links.forEach(link => link.classList.remove('active'));
+            element.parentElement.classList.add('active');
+
+            const title = document.getElementById("pageTitle");
+            const desc = document.getElementById("pageDesc");
+
+            if (tabId === 'dashboard') {
+                title.innerText = "Overview Dashboard";
+                desc.innerText = "Hospital Management & Patient Compliance System";
+            } else if (tabId === 'patients') {
+                title.innerText = "⚠️ Patient Compliance";
+                desc.innerText = "လူနာများ၏ စည်းကမ်းလိုက်နာမှုနှင့် မှတ်တမ်းများကို စီမံရန်";
+            } else if (tabId === 'staff') {
+                title.innerText = "👨‍⚕️ People & Staff";
+                desc.innerText = "ဆရာဝန်များနှင့် ဆေးရုံဝန်ထမ်းများ၏ အချက်အလက်များ";
+            } else if (tabId === 'settings') {
+                title.innerText = "⚙️ System Rules";
+                desc.innerText = "ဆေးရုံ၏ Check-in အချိန်များနှင့် စည်းကမ်းချက်များ သတ်မှတ်ရန်";
+            }
+        }
+
+        async function handlePatientAction(uid, action, actionName) {
+            
+            const isConfirmed = await showSmartConfirm(`ဒီလူနာ (UID: ${uid}) ကို တကယ် ${actionName} လုပ်မှာ သေချာပြီလား?`);
+            if (!isConfirmed) return;
+
+            
+            const response = await fetch("/api/admin/patient-action", {
+                
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ uid, action })
+            });
+
+            const result = await response.json();
+            alert(result.message);
+            
+            if (result.success) loadCompliancePatients(); 
+        }
+
+        function warnPatient(uid) { handlePatientAction(uid, 'warning', 'Warning ပေး'); }
+        function lockPatient(uid) { handlePatientAction(uid, 'locked', 'Lock ချ'); }
+        function unlockPatient(uid) { handlePatientAction(uid, 'active', 'Unlock ပြန်လုပ်'); }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCompliancePatients();
+            loadSystemSettings();
+            loadStaff(); 
+            loadDoctorsForDropdown();
+            loadDashboardStats();
+            loadAdminDoctors();
+        });
+
+        let searchTimeout;
+        function searchPatients() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const keyword = document.getElementById("searchInput").value;
+                loadCompliancePatients(keyword);
+            }, 500); 
+        }
+
+        async function loadCompliancePatients(searchKeyword = "") {
+            try {
+                const response = await fetch(`/api/admin/patients-compliance?search=${searchKeyword}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const tbody = document.getElementById("complianceTableBody");
+                    tbody.innerHTML = ""; 
+
+                    if (result.patients.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;">ရှာဖွေမှုရလဒ် မရှိပါ။</td></tr>`;
+                        return;
+                    }
+
+                    result.patients.forEach(p => {
+                        let badgeHtml = '';
+                        let actionHtml = '';
+
+                        if (p.status === 'active') {
+                            badgeHtml = `<span class="badge active" style="background: #dcfce7; color: #16a34a;">Active</span>`;
+                            actionHtml = `
+                                <button class="action-btn warning-btn" onclick="warnPatient('${p.uid}')"><i class="fas fa-exclamation-triangle"></i> Warn</button>
+                                <button class="action-btn lock-btn" onclick="lockPatient('${p.uid}')"><i class="fas fa-lock"></i> Lock</button>
+                            `;
+                        } else if (p.status === 'warning') {
+                            badgeHtml = `<span class="badge warning">Warning</span>`;
+                            actionHtml = `
+                                <button class="action-btn lock-btn" onclick="lockPatient('${p.uid}')"><i class="fas fa-lock"></i> Lock</button>
+                                <button class="action-btn unlock-btn" onclick="unlockPatient('${p.uid}')"><i class="fas fa-unlock"></i> Unlock</button>
+                            `;
+                       } else if (p.status === 'locked') {
+                            badgeHtml = `<span class="badge danger">Locked</span>`;
+                            actionHtml = `
+                                <button class="action-btn unlock-btn" onclick="unlockPatient('${p.uid}')"><i class="fas fa-unlock"></i> Unlock</button>
+                            `;
+                        }
+
+                        actionHtml += `<button class="action-btn" onclick="deletePatient('${p.uid}')" style="background: #ef4444; color: white; padding: 6px 12px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; margin-left: 5px;">🗑️ Delete</button>`;
+
+                      // 🌟 Action ခလုတ်တွေရဲ့ ရှေ့ဆုံးမှာ "Info" ခလုတ်ကို ဝင်ပေါင်းထည့်မည်
+                        actionHtml = `<button class="action-btn" onclick="showPatientInfo('${p.name}', '${p.age || '-'}', '${p.phone || '-'}', '${p.address || '-'}')" style="background: #3b82f6; color: white; padding: 6px 12px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; margin-right: 5px;"><i class="fas fa-info-circle"></i> Info</button>` + actionHtml;
+
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td>${p.uid}</td>
+                            <td style="font-weight: 600; color: #1e293b;">${p.name}</td>
+                            <td>
+                                <span style="background: #f1f5f9; padding: 4px 10px; border-radius: 10px; font-weight: bold; color: #475569;">
+                                    ${p.violations_count || '0'}
+                                </span>
+                            </td>
+                            <td>${badgeHtml}</td>
+                            <td style="white-space: nowrap;">${actionHtml}</td>
+                        `;
+                        
+                        tbody.appendChild(tr);
+                    });
+                } 
+            } catch (error) {
+                console.error("Error loading compliance patients:", error);
+            }
+        } 
+
+       async function loadSystemSettings() {
+            try {
+                const response = await fetch("/api/admin/settings");
+                const result = await response.json();
+
+                if (result.success) {
+                    result.settings.forEach(s => {
+                        if (s.setting_key === 'qr_checkin_open_minutes') document.getElementById('setting_qr_open').value = s.setting_value;
+                        if (s.setting_key === 'max_violations_before_lock') document.getElementById('setting_max_violations').value = s.setting_value;
+                        // 🌟 Cancel အကြိမ်အရေအတွက်ကိုပါ အလိုအလျောက် ဖြည့်ပေးမည်
+                        if (s.setting_key === 'max_cancellations_per_day') document.getElementById('maxCancellations').value = s.setting_value;
+                    });
+                }
+            } catch (error) {
+                console.error("Error loading settings:", error);
+            }
+        }
+       async function saveSystemSettings() {
+            // 🌟 HTML ထဲက ID အမှန်များကို ပြောင်းသုံးထားပါသည်
+            const qrOpenVal = document.getElementById("setting_qr_open").value; 
+            const maxViolationsVal = document.getElementById("setting_max_violations").value;
+            const maxCancellationsVal = document.getElementById("maxCancellations").value; 
+
+            try {
+                const response = await fetch("/api/admin/settings", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        qr_open: qrOpenVal,
+                        max_violations: maxViolationsVal,
+                        max_cancellations: maxCancellationsVal 
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert(result.message);
+                } else {
+                    alert("Error: " + result.message);
+                }
+            } catch (error) {
+                console.error("Save Settings Error:", error);
+            }
+        }
+       async function loadStaff() {
+            try {
+                const response = await fetch("/api/admin/staff");
+                const result = await response.json();
+
+                if (result.success) {
+                    const tbody = document.getElementById("staffTableBody");
+                    tbody.innerHTML = ""; 
+
+                    if (result.staff.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">ဝန်ထမ်းမှတ်တမ်း မရှိသေးပါ။</td></tr>`;
+                        return;
+                    }
+
+                    result.staff.forEach(s => {
+                        let badgeHtml = s.status === 'active' 
+                            ? `<span class="badge active" style="background: #dcfce7; color: #16a34a;">Active</span>` 
+                            : `<span class="badge danger" style="background: #fecaca; color: #991b1b;">Inactive</span>`;
+                        
+                        let roleName = s.role ? s.role.toUpperCase() : 'STAFF';
+
+                        const tr = document.createElement("tr");
+                        // 🚨 ဤနေရာတွင် p အစား s ကိုသာ သုံးထားပါသည်
+                        tr.innerHTML = `
+                            <td><strong>${s.name}</strong><br><small style="color:#64748b;">ID: ${s.id}</small></td>
+                            <td><span style="font-weight: 500; color: #0284c7;">${roleName}</span></td>
+                            <td>${s.phone || '-'}</td>
+                            <td>${badgeHtml}</td>
+                            <td style="white-space: nowrap;">
+                              <button class="action-btn unlock-btn" onclick="openStaffModal('edit', '${s.id}', '${s.role}', '${s.name}', '${s.status}', '${s.phone || ''}')"><i class="fas fa-edit"></i> Edit</button>
+                              <button class="action-btn lock-btn" onclick="deleteStaff('${s.id}', '${s.role}')"><i class="fas fa-trash"></i> Delete</button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (error) {
+                console.error("Error loading staff:", error);
+            }
+        }
+
+        async function deleteStaff(id, role) {
+            const isConfirmed = await showSmartConfirm(`ဒီဝန်ထမ်း (ID: ${id}, Role: ${role}) ကို တကယ် ဖျက်မှာ သေချာပြီလား?`);
+            if (!isConfirmed) return;
+            try {
+                const response = await fetch("/api/admin/staff/delete", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id, role })
+                });
+                const result = await response.json();
+                alert(result.message);
+                if (result.success) loadStaff(); 
+            } catch (error) {
+                console.error("Error deleting staff:", error);
+                showSmartAlert("Network Error ကြောင့် ဖျက်၍မရပါ။");
+            }
+        }
+
+       // 🌟 Edit တွင် Role ကို အပြီးဖျောက်မည့် Function သစ် 🌟
+        function openStaffModal(mode, id = '', role = 'Admin Counter', name = '', status = 'active', phone = '') {
+            document.getElementById('staffModal').style.display = 'flex';
+            document.getElementById('staffMode').value = mode;
+            document.getElementById('staffId').value = id;
+            
+            // Data များ ဖြည့်မည်
+            document.getElementById('staffName').value = name;
+            document.getElementById('staffPhone').value = phone; 
+            document.getElementById('staffStatus').value = status.toLowerCase();
+            
+            const exactRole = (role.toLowerCase() === 'doctor assistant') ? 'Doctor Assistant' : 'Admin Counter';
+            document.getElementById('staffRole').value = exactRole;
+
+            if (mode === 'edit') {
+                // ✏️ Edit နှိပ်လျှင် - Password နှင့် Role အကွက်များကို လုံးဝ (လုံးဝ) ဖျောက်ထားမည်
+                document.getElementById('staffModalTitle').innerText = "✏️ Edit Staff";
+                document.getElementById('staffPasswordGroup').style.display = 'none'; 
+                document.getElementById('staffRoleGroup').style.display = 'none'; 
+                
+                // Doctor Assistant ဖြစ်မှသာ ဆရာဝန်ရွေးသည့် အကွက်ကို ပြမည်
+                if (exactRole === 'Doctor Assistant') {
+                    document.getElementById('doctorSelectGroup').style.display = 'block';
+                } else {
+                    document.getElementById('doctorSelectGroup').style.display = 'none';
+                }
+            } else {
+                // ➕ Add New နှိပ်လျှင် - အကွက်များ အားလုံး ပြန်ပေါ်လာမည်
+                document.getElementById('staffModalTitle').innerText = "➕ Add New Staff";
+                document.getElementById('staffPasswordGroup').style.display = 'block';
+                document.getElementById('staffRoleGroup').style.display = 'block';
+                document.getElementById('staffPassword').value = '';
+                
+                if (document.getElementById('staffRole').value === 'Doctor Assistant') {
+                    document.getElementById('doctorSelectGroup').style.display = 'block';
+                } else {
+                    document.getElementById('doctorSelectGroup').style.display = 'none';
+                }
+            }
+        }
+
+        async function saveStaff() {
+            const mode = document.getElementById('staffMode').value;
+            const data = {
+                id: document.getElementById('staffId').value,
+                name: document.getElementById('staffName').value,
+                phone: document.getElementById('staffPhone').value,
+                password: document.getElementById('staffPassword').value,
+                role: document.getElementById('staffRole').value,
+                status: document.getElementById('staffStatus').value,
+                dr_id: document.getElementById('staffDoctor').value
+            };
+
+            if (!data.name || (mode === 'add' && !data.password)) {
+                return showSmartAlert("အချက်အလက်များကို ပြည့်စုံစွာ ဖြည့်ပါ။");
+            }
+
+            const endpoint = mode === 'add' ? "/api/admin/staff/add" : "/api/admin/staff/edit";
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                alert(result.message);
+                
+                if (result.success) {
+                    document.getElementById('staffModal').style.display = 'none';
+                    loadStaff(); 
+                }
+            } catch (error) {
+                console.error("Error saving staff:", error);
+                showSmartAlert("Network Error!");
+            }
+        }
+
+        document.getElementById('staffRole').addEventListener('change', function() {
+            if (this.value === 'Doctor Assistant') {
+                document.getElementById('doctorSelectGroup').style.display = 'block';
+            } else {
+                document.getElementById('doctorSelectGroup').style.display = 'none';
+            }
+        });
+
+        async function loadDoctorsForDropdown() {
+            try {
+                const response = await fetch("/api/admin/doctors-list");
+                const result = await response.json();
+                if (result.success) {
+                    const select = document.getElementById("staffDoctor");
+                    select.innerHTML = "";
+                    result.doctors.forEach(dr => {
+                        select.innerHTML += `<option value="${dr.dr_id}">${dr.name} (${dr.specialty})</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error("Error loading doctors:", error);
+            }
+        }
+
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch("/api/admin/dashboard-stats");
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById("totalPatientsCount").innerText = result.stats.total_patients;
+                    document.getElementById("totalDoctorsCount").innerText = result.stats.total_doctors;
+                    document.getElementById("totalStaffCount").innerText = result.stats.total_staff;
+                    document.getElementById("todayAppointmentsCount").innerText = result.stats.today_appointments;
+
+                    const tbody = document.getElementById("recentViolationsBody");
+                    tbody.innerHTML = ""; 
+
+                    if (result.recent_violations.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #64748b;">ယခုလောလောဆယ် စည်းကမ်းဖောက်ဖျက်ထားသော လူနာမရှိသေးပါ။</td></tr>`;
+                    } else {
+                        result.recent_violations.forEach(v => {
+                            let badgeHtml = v.status === 'warning' ? '<span class="badge warning">Warning</span>' : '<span class="badge danger">Locked</span>';
+                            let actionText = v.status === 'warning' ? 'Issued Warning' : 'Account Locked';
+                            
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td>${v.uid}</td>
+                                    <td>${badgeHtml}</td>
+                                    <td>${actionText}</td>
+                                    <td>System</td>
+                                </tr>
+                            `;
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching dashboard stats:", error);
+            }
+        }
+
+      async function saveNewDoctor() {
+            const doctor_code = document.getElementById('newDrCode').value;
+            const name = document.getElementById('newDrName').value;
+            const specialty = document.getElementById('newDrSpecialty').value;
+            const experience = document.getElementById('newExperience').value;
+            
+            // 🌟 ယာယီ Default တန်ဖိုးများ ထည့်ပေးမည် (Admin က Edit ကနေ ပြန်ပြင်ရပါမည်)
+            const available_days = "တနင်္လာ, အင်္ဂါ, ဗုဒ္ဓဟူး, ကြာသပတေး, သောကြာ"; 
+            const working_time = "09:00 AM - 12:00 PM";
+            const room_number = "Room 1";
+
+            if (!doctor_code || !name || !specialty || !experience) {
+                return showSmartAlert("ကျေးဇူးပြု၍ ဆရာဝန်၏ အခြေခံအချက်အလက်များကို အပြည့်အစုံ ဖြည့်ပါ။", "warning");
+            }
+
+            try {
+               const response = await fetch("/api/admin/doctors/add", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    doctor_code: doctor_code, 
+                    name: name, 
+                    specialty: specialty, 
+                    experience: experience,
+                    available_days: available_days, 
+                    working_time: working_time,
+                    room_number: room_number
+                })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showSmartAlert("ဆရာဝန်အသစ် ထည့်သွင်းပြီးပါပြီ။ ကျေးဇူးပြု၍ 'Edit' ခလုတ်မှတစ်ဆင့် အချိန်နှင့် ရက်များကို ပြန်လည်သတ်မှတ်ပေးပါ။", "success");
+                    document.getElementById('doctorModal').style.display = 'none';
+                    
+                    // Input များကို ပြန်ရှင်းမည်
+                    document.getElementById('newDrCode').value = '';
+                    document.getElementById('newDrName').value = '';
+                    document.getElementById('newDrSpecialty').value = '';
+                    document.getElementById('newExperience').value = '';
+                    
+                    loadDoctorsForDropdown(); 
+                    loadAdminDoctors(); // ဇယားကို Update လုပ်မည်
+                } else {
+                    showSmartAlert(result.message, "error");
+                }
+            } catch (error) {
+                console.error("Error saving doctor:", error);
+                showSmartAlert("Network Error ကြောင့် သိမ်းဆည်း၍မရပါ။", "error");
+            }
+        }
+        
+       async function deletePatient(uid) {
+            const confirmDelete = await showSmartConfirm("ဒီလူနာအကောင့်ကို အပြီးတိုင် ဖျက်မှာ သေချာပြီလား? (လူနာ၏ Booking မှတ်တမ်းများပါ ပျက်သွားပါမည်)");
+            if (!confirmDelete) return;
+
+            try {
+                const response = await fetch(`/api/admin/patient/${uid}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showSmartAlert(result.message, "success");
+                    // Alert ပေါ်ပြီး 1.5 စက္ကန့်အကြာမှ Page ကို Reload လုပ်မည်
+                    setTimeout(() => {
+                        window.location.reload(); 
+                    }, 1500);
+                } else {
+                    // Backend မှ ဖျက်မရကြောင်း Error ပြန်လာလျှင်
+                    showSmartAlert(result.message, "error");
+                }
+            } catch (error) {
+                console.error("Error deleting patient:", error);
+                // 🌟 ဤနေရာတွင် "error" ဟု အတိအကျ ထည့်ပေးလိုက်ပါပြီ
+                showSmartAlert("Network Error ကြောင့် ဖျက်၍ မရပါ။", "error"); 
+            }
+        }
+        // 💡 Info ခလုတ်နှိပ်ပါက လူနာအချက်အလက်များကို Popup ဖြင့် ပြသမည့် Function
+        function showPatientInfo(name, age, phone, address) {
+            document.getElementById('infoName').innerText = name;
+            document.getElementById('infoAge').innerText = age;
+            document.getElementById('infoPhone').innerText = phone;
+            document.getElementById('infoAddress').innerText = address;
+            document.getElementById('patientInfoModal').style.display = 'flex';
+        }
+        // 💡 Smart Alert ကို ခေါ်မည့် Function
+        function showSmartAlert(message, type = 'success') {
+            const modal = document.getElementById('smartAlertModal');
+            const box = document.getElementById('smartAlertBox');
+            const icon = document.getElementById('smartAlertIcon');
+            const title = document.getElementById('smartAlertTitle');
+
+            // Type ပေါ်မူတည်ပြီး အရောင်နှင့် Icon ပြောင်းမည်
+            if (type === 'success') {
+                icon.innerHTML = '<i class="fas fa-check-circle" style="color: #10b981;"></i>';
+                title.innerText = 'Success!';
+            } else if (type === 'error') {
+                icon.innerHTML = '<i class="fas fa-times-circle" style="color: #ef4444;"></i>';
+                title.innerText = 'Error!';
+            } else if (type === 'warning') {
+                icon.innerHTML = '<i class="fas fa-exclamation-triangle" style="color: #f59e0b;"></i>';
+                title.innerText = 'Warning!';
+            }
+
+            document.getElementById('smartAlertMessage').innerText = message;
+            
+            modal.style.display = 'flex';
+            
+            // Animation အလုပ်လုပ်စေရန် Timeout ခံထားခြင်း
+            setTimeout(() => {
+                modal.style.opacity = '1';
+                box.style.transform = 'scale(1)';
+            }, 10);
+        }
+
+        // 💡 Smart Alert ကို ပြန်ပိတ်မည့် Function
+        function closeSmartAlert() {
+            const modal = document.getElementById('smartAlertModal');
+            const box = document.getElementById('smartAlertBox');
+            
+            modal.style.opacity = '0';
+            box.style.transform = 'scale(0.9)';
+            
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+        // 💡 Smart Confirm ကို ခေါ်မည့် Function (Promise ဖြင့် အလုပ်လုပ်သည်)
+        function showSmartConfirm(message) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('smartConfirmModal');
+                const box = document.getElementById('smartConfirmBox');
+                
+                document.getElementById('smartConfirmMessage').innerText = message;
+                
+                modal.style.display = 'flex';
+                setTimeout(() => {
+                    modal.style.opacity = '1';
+                    box.style.transform = 'scale(1)';
+                }, 10);
+
+                // "Yes" နှိပ်လျှင် true ပြန်ပေးမည်
+                document.getElementById('btnConfirmYes').onclick = () => {
+                    closeSmartConfirm(modal, box);
+                    resolve(true); 
+                };
+                
+                // "Cancel" နှိပ်လျှင် false ပြန်ပေးမည်
+                document.getElementById('btnConfirmNo').onclick = () => {
+                    closeSmartConfirm(modal, box);
+                    resolve(false); 
+                };
+            });
+        }
+
+        // 💡 Smart Confirm ကို ပြန်ပိတ်မည့် Function
+        function closeSmartConfirm(modal, box) {
+            modal.style.opacity = '0';
+            box.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+       async function editDoctor() {
+            const code = document.getElementById("editDocCode").value; 
+            const name = document.getElementById("editDocName").value;
+            const spec = document.getElementById("editDocSpecialty").value;
+            const exp = document.getElementById("editDocExperience").value;
+            const working_time = document.getElementById("editDocWorkingTime").value;
+            const room_number = document.getElementById("editDocRoomNumber").value;
+
+            // 🌟 ရွေးချယ်ထားသော Checkbox များကို ဖမ်းယူ၍ ကော်မာ(,) ခံကာ စာသားပြောင်းမည်
+            const selectedDays = [];
+            document.querySelectorAll('#editDaysContainer input[type="checkbox"]:checked').forEach(cb => {
+                selectedDays.push(cb.value);
+            });
+            const available_days = selectedDays.join(', ');
+
+            if (selectedDays.length === 0) {
+                return showSmartAlert("ကျေးဇူးပြု၍ ထိုင်မည့်ရက် အနည်းဆုံး တစ်ရက် ရွေးချယ်ပါ။", "warning");
+            }
+
+            const response = await fetch("/api/admin/doctors/edit", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    doctor_code: code, name: name, specialty: spec, experience: exp,
+                    available_days: available_days, working_time: working_time, room_number: room_number      
+                })
+            });
+           
+        
+
+            const result = await response.json();
+            alert(result.message);
+            
+            if (result.success) {
+                document.getElementById('editDoctorModal').style.display = 'none'; // Modal ပိတ်မည်
+                loadAdminDoctors(); // ဇယားကို ချက်ချင်း Update လုပ်မည်
+            }
+        }
+       // 🌟 ၁။ စာမျက်နှာပွင့်သည်နှင့် ဆရာဝန်စာရင်းကို ဇယားထဲ ထည့်မည်
+        async function loadAdminDoctors() {
+            const response = await fetch("/api/admin/doctors");
+            const result = await response.json();
+            const tbody = document.getElementById("adminDoctorsTableBody");
+            tbody.innerHTML = "";
+
+            if (result.success && result.doctors.length > 0) {
+                result.doctors.forEach(doc => {
+                    tbody.innerHTML += `
+                        <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                            <td style="padding: 15px; font-weight: bold; color: #475569;">${doc.doctor_code}</td>
+                            
+                            <td style="padding: 15px; font-weight: bold;">${doc.name}</td>
+                            
+                            <td style="padding: 15px;">${doc.specialty}</td>
+                            
+                            <td style="padding: 15px; color: #7e22ce; font-weight: bold;">${doc.room_number || '-'}</td>
+                            
+                            <td style="padding: 15px; color: #059669; font-weight: 500;">${doc.available_days}</td>
+                            <td style="padding: 15px; color: #d97706; font-weight: 500;">${doc.working_time}</td>
+                            <td style="padding: 15px;">
+                                <button onclick="openEditDoctorModal('${doc.doctor_code}', '${doc.name}', '${doc.specialty}', '${doc.experience}', '${doc.available_days}', '${doc.working_time}', '${doc.room_number || ''}')" style="background: #f59e0b; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;">✏️ Edit</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="7" style="padding: 20px; color: red;">ဆရာဝန်များ မရှိသေးပါ။</td></tr>`;
+            }
+        }
+
+        // 🌟 ၂။ Edit ခလုတ်နှိပ်လျှင် Modal ထဲသို့ Data များ ထည့်ပြီး ပွင့်လာမည်
+        function openEditDoctorModal(code, name, spec, exp, days, time, room) {
+            document.getElementById('editDocCode').value = code;
+            document.getElementById('editDocName').value = name;
+            document.getElementById('editDocSpecialty').value = spec;
+            document.getElementById('editDocExperience').value = exp;
+            document.getElementById('editDocWorkingTime').value = time;
+            document.getElementById('editDocRoomNumber').value = room; // အခန်းနံပါတ်ပါရင် ထည့်ပါ
+
+            // 🌟 ဇယားထဲက ရက်တွေနဲ့ တိုက်စစ်ပြီး Box များကို Check လုပ်မည်
+            const checkboxes = document.querySelectorAll('#editDaysContainer input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = false); // အရင်ဆုံး အကုန်ဖျောက်မည်
+
+            if(days) {
+                const activeDays = days.split(',').map(d => d.trim());
+                checkboxes.forEach(cb => {
+                    if(activeDays.includes(cb.value)) {
+                        cb.checked = true; // တူညီတဲ့ရက်ဆိုရင် လင်းနေစေမည်
+                    }
+                });
+            }
+            
+            document.getElementById('editDoctorModal').style.display = 'flex';
+        }
+
+      
+
+           
+    </script>
+</body>
+</html>  

@@ -1,0 +1,266 @@
+/* 🌟 အခြေခံ ဖောင့်နှင့် Background */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f3f7fb;
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    justify-content: center;
+}
+
+/* 📱 ဖုန်း Screen ပုံစံ App Container */
+.booking-wrapper {
+    width: 100%;
+    max-width: 450px;
+    background: #ffffff;
+    min-height: 100vh;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.08);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 🌟 အပေါ်ပိုင်း ခေါင်းစီး (Top Navigation) - Gradient ဖြင့် ပြင်ဆင်ခြင်း */
+.top-nav {
+    display: flex;
+    align-items: center;
+    padding: 25px 20px 20px;
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    color: white;
+    border-radius: 0 0 25px 25px;
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.15);
+    margin-bottom: 25px;
+}
+
+/* Back Button ပုံစံသစ် */
+.back-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: background 0.3s;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.top-nav h2 {
+    margin: 0 0 0 15px;
+    font-size: 19px;
+    font-weight: 600;
+}
+
+/* 🌟 Form ဖြည့်မည့် အပိုင်းများ */
+.form-section {
+    padding: 0 25px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+}
+
+/* Select နှင့် Input Box များကို အိစက်အောင် ပြင်ခြင်း */
+.input-group select, 
+.input-group input {
+    width: 100%;
+    padding: 16px;
+    border-radius: 14px;
+    border: 1.5px solid #e2e8f0;
+    font-family: 'Poppins', sans-serif;
+    font-size: 15px;
+    color: #1e293b;
+    outline: none;
+    background: #f8fafc;
+    transition: all 0.3s;
+    box-sizing: border-box;
+}
+
+.input-group select:focus, 
+.input-group input:focus {
+    border-color: #3b82f6;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+/* ရွေးလို့မရသေးသော (Disabled) အခြေအနေ */
+.input-group select:disabled, 
+.input-group input:read-only {
+    background: #f1f5f9;
+    cursor: not-allowed;
+    color: #94a3b8;
+    border-color: #cbd5e1;
+}
+
+.input-group small {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+/* 🌟 ဆရာဝန် အချက်အလက်ပြမည့် ကတ် (Doctor Info Card) */
+.info-card {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.05);
+}
+
+.info-card h4 {
+    margin: 0 0 8px;
+    color: #1e3a8a;
+    font-size: 18px;
+}
+
+.info-card p {
+    margin: 0 0 15px;
+    color: #3b82f6;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* လူဦးရေပြသည့် Badge လေးများ */
+.queue-status {
+    background: white;
+    padding: 10px 20px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.queue-status span {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.count-badge {
+    background: #ef4444;
+    color: white;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+/* 🌟 အတည်ပြုမည့် ခလုတ် (Confirm Button) */
+.confirm-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    color: white;
+    padding: 18px;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.25);
+    transition: all 0.3s;
+    margin-top: 10px;
+}
+
+.confirm-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 25px rgba(16, 185, 129, 0.35);
+}
+
+/* 🌟 Booking အောင်မြင်ကြောင်းပြမည့် Modal Box (Popup) */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* Popup ကို အိစက်စွာ ခုန်ထွက်လာစေရန် (Animation) */
+.modal-box {
+    background: white;
+    width: 85%;
+    max-width: 340px;
+    border-radius: 24px;
+    padding: 35px 30px;
+    text-align: center;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.modal-box h3 {
+    margin: 0 0 10px;
+    color: #10b981;
+    font-size: 22px;
+}
+
+.modal-box p {
+    color: #64748b;
+    font-size: 14px;
+    margin: 0 0 20px;
+}
+
+/* Token နံပါတ်ပြမည့် နေရာ */
+.token-display {
+    font-size: 40px;
+    font-weight: 700;
+    color: #1e293b;
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 20px;
+    border: 2.5px dashed #cbd5e1;
+    margin-bottom: 25px;
+    letter-spacing: 3px;
+}
+
+.close-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    font-family: 'Poppins', sans-serif;
+    transition: 0.3s;
+}
+
+.close-btn:hover {
+    background: #2563eb;
+}
+
+.hidden {
+    display: none !important;
+}

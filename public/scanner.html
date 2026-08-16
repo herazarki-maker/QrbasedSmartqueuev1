@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner - Check In</title>
+    <link rel="stylesheet" href="scanner.css">
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+    <div class="scanner-wrapper">
+        <nav class="top-nav">
+            <button class="back-btn" onclick="window.location.href='patient.html'">🔙 Back</button>
+            <h2>Check-In Scanner</h2>
+        </nav>
+
+        <div class="scanner-section">
+            <p class="scanner-desc" style="margin-top: 10px; font-size: 15px; font-weight: 500;">ဆေးခန်းရောက်ပါက ကောင်တာရှိ QR Code ကို ဖတ်ပါ။</p>
+
+            <div id="reader"></div>
+
+            <div id="scanResult" style="display: none;"></div>
+
+           <div id="resultBox" class="result-card" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe; width: 100%; box-sizing: border-box; padding: 25px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 40px; margin-bottom: 10px;">✅</div>
+                <h3 style="color: #1e3a8a; margin-top: 0; font-size: 20px;">Check-in အောင်မြင်ပါသည်</h3>
+                <p style="color: #3b82f6; margin-bottom: 5px; font-size: 15px;">လူကြီးမင်း၏ တန်းစီ Token နံပါတ်</p>
+                
+                <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #bae6fd;">
+                             <span style="color: #0369a1; font-size: 15px;">👨‍⚕️ လက်ရှိ ကုသနေသော နံပါတ်: </span>
+                             <span id="liveCurrentToken" style="color: #0ea5e9; font-size: 22px; font-weight: bold;">--</span>
+                </div>
+                <h1 id="myToken" style="font-size: 55px; color: #1d4ed8; margin: 10px 0; font-weight: 800;">-</h1>
+                
+                <p id="queueStatus" style="color: #64748b; font-size: 14px; background: white; padding: 8px 15px; border-radius: 6px; display: inline-block; margin-bottom: 20px;">
+                    စောင့်ဆိုင်းရန်မလိုပါ
+                </p>
+                
+                <button onclick="window.location.href='patient.html'" style="background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s;">
+                    🏠 ပင်မစာမျက်နှာသို့ ပြန်သွားမည်
+                </button>
+            </div>
+
+            <div id="completedBox" style="display: none; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 30px 20px; border-radius: 12px; text-align: center; margin-top: 20px;">
+                <div style="font-size: 50px; margin-bottom: 10px;">🎉</div>
+                <h3 style="color: #065f46; margin-top: 0; font-size: 20px;">လူကြီးမင်း၏ အလှည့် ပြီးဆုံးပါပြီ</h3>
+                <p style="color: #047857; line-height: 1.6; margin-bottom: 25px;">
+                    ကျွန်ုပ်တို့ ဆေးခန်းသို့ လာရောက်ပြသသည့်အတွက် အထူးပင် ကျေးဇူးတင်ရှိပါသည်။
+                </p>
+                <button onclick="window.location.href='patient.html'" style="background: #10b981; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s;">
+                    🏠 ပင်မစာမျက်နှာသို့ ပြန်သွားမည်
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+       const currentUID = localStorage.getItem("loggedInUID");
+        let html5QrcodeScanner;
+        let myCurrentToken = null; // 🌟 မိမိ၏ Token အား မှတ်ထားရန် 
+        let myDocCode = null; // 🌟 မိမိပြသရမည့် ဆရာဝန် Code အား မှတ်ထားရန်
+
+        if (!currentUID) {
+            alert("ကျေးဇူးပြု၍ Login အရင်ဝင်ပါ။");
+            window.location.href = "/";
+        }
+
+       function startScanner() {
+            if(!html5QrcodeScanner) {
+                html5QrcodeScanner = new Html5QrcodeScanner(
+                    "reader",
+                    { 
+                        fps: 10, 
+                        qrbox: {width: 250, height: 250},
+                        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA] 
+                    },
+                    /* verbose= */ false
+                );
+                html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            html5QrcodeScanner.clear();
+            checkInPatient(decodedText);
+        }
+
+        function onScanFailure(error) {
+            // အသံတိတ် ဖတ်နေမည်
+        }
+
+        async function checkInPatient(qrData) {
+            const response = await fetch("/api/check-in", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ uid: currentUID, qr_text: qrData })
+            });
+
+            const result = await response.json();
+
+            if(result.success) {
+                // အောင်မြင်ပါက အစိမ်းရောင်ကတ် ပြမည်
+                document.getElementById("reader").style.display = "none";
+                document.getElementById("completedBox").style.display = "none";
+                document.getElementById("resultBox").style.display = "block";
+                
+                myCurrentToken = result.patient_token; // ဥပမာ ZM003
+                myDocCode = myCurrentToken.replace(/[0-9]/g, ''); // ZM ဟု ပြောင်းမည်
+                
+                document.getElementById("myToken").innerText = myCurrentToken;
+                
+                // 🌟 Check-in အောင်မြင်သည်နှင့် လက်ရှိနံပါတ်ကို ချက်ချင်းလှမ်းခေါ်မည်
+                fetchNowServing();
+           } else {
+                // ကင်မရာကို ဖျောက်မည်
+                document.getElementById("reader").style.display = "none"; 
+                
+                const resultDiv = document.getElementById("scanResult");
+                resultDiv.style.display = "block";
+                resultDiv.style.padding = "25px 20px";
+                resultDiv.style.borderRadius = "12px";
+                resultDiv.style.textAlign = "center";
+                resultDiv.style.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.1)";
+
+                if (result.errorType === 'TOO_EARLY') {
+                    resultDiv.style.background = "#fffbeb";
+                    resultDiv.style.border = "1px solid #fde68a";
+                    resultDiv.innerHTML = `
+                        <div style="font-size: 45px; margin-bottom: 15px;">⏳</div>
+                        <h3 style="color: #d97706; margin-top: 0; font-size: 18px;">Check-in ဝင်၍မရသေးပါ</h3>
+                        <p style="color: #b45309; font-size: 15px; line-height: 1.5; margin-bottom: 20px;">
+                            ${result.message}
+                        </p>
+                        <button onclick="window.location.href='patient.html'" style="background: #f59e0b; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; transition: 0.2s;">
+                            🔙 နောက်သို့ ပြန်ဆုတ်မည်
+                        </button>
+                    `;
+                } else {
+                    resultDiv.style.background = "#fef2f2";
+                    resultDiv.style.border = "1px solid #fca5a5";
+                    resultDiv.innerHTML = `
+                        <div style="font-size: 45px; margin-bottom: 15px;">🚫</div>
+                        <h3 style="color: #991b1b; margin-top: 0; font-size: 18px;">QR Code မှားယွင်းနေပါသည်</h3>
+                        <p style="color: #7f1d1d; font-size: 15px; line-height: 1.5; margin-bottom: 20px;">
+                            ${result.message}
+                        </p>
+                        <button onclick="window.location.reload()" style="background: #ef4444; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; transition: 0.2s; margin-bottom: 10px;">
+                            🔄 ပြန်လည် စကင်ဖတ်မည်
+                        </button>
+                        <button onclick="window.location.href='patient.html'" style="background: #e5e7eb; color: #374151; padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; transition: 0.2s;">
+                            🔙 နောက်သို့ ပြန်ဆုတ်မည်
+                        </button>
+                    `;
+                }
+            }
+        }
+
+        // 🌟 ယခုလက်ရှိ ဆရာဝန်ကြည့်နေသော Token (Now Serving) အား လှမ်းဆွဲမည့် Function အသစ် 🌟
+        async function fetchNowServing() {
+            if (!myDocCode) return; // ဆရာဝန် Code မရှိသေးလျှင် မလုပ်ပါ
+
+            try {
+                const response = await fetch(`/api/assistant/queue/${myDocCode}`);
+                const resData = await response.json();
+                
+                if (resData.success && resData.queue) {
+                    const consulting = resData.queue.find(p => p.status === 'consulting');
+                    const statusElement = document.getElementById("queueStatus");
+                    const liveTokenElement = document.getElementById('liveCurrentToken');
+
+                    if (consulting) {
+                        const currentTokenStr = consulting.token_number;
+                        liveTokenElement.innerText = currentTokenStr;
+
+                        if (currentTokenStr === myCurrentToken) {
+                            // မိမိအလှည့် ရောက်နေလျှင် Status ပြောင်းမည် (CheckMyStatus က ဆက်ယူသွားမည်ဖြစ်သော်လည်း Backup အနေဖြင့်)
+                            statusElement.innerText = "🎉 Now Your Turn! အခန်းတွင်းသို့ ဝင်ရောက်နိုင်ပါပြီ။";
+                            statusElement.style.color = "#059669";
+                            statusElement.style.fontWeight = "bold";
+                        } else {
+                            statusElement.innerText = "ခေတ္တစောင့်ဆိုင်းပေးပါ။";
+                            statusElement.style.color = "#64748b";
+                        }
+                    } else {
+                        liveTokenElement.innerText = "Not Started";
+                        statusElement.innerText = "ဆရာဝန် အခန်းမဝင်သေးပါ။";
+                        statusElement.style.color = "#d97706";
+                    }
+                }
+            } catch (err) {
+                console.error("Live Token Error:", err);
+            }
+        }
+
+        // 💡 Socket.io ဖြင့် ချိတ်ဆက်ပြီး Server မှ အချက်ပြမှုကို နားထောင်မည်
+        const socket = io();
+        
+        socket.on("update_queue", () => {
+            console.log("🔔 Server မှ Signal ရောက်လာပါပြီ! Status နှင့် Live Token အသစ်ပြန်စစ်မည်။");
+            checkMyStatus(); 
+            fetchNowServing(); // 🌟 Assistant က Call နှိပ်လိုက်တိုင်း Live Token ကိုပါ အသစ်ပြန်ဆွဲမည်
+        });
+
+        window.onload = checkMyStatus;
+
+       // 🌟 အသံ ခဏခဏ ထပ်မမြည်စေရန် မှတ်ထားမည့် Variable
+        let hasPlayedTurnSound = false; 
+
+        async function checkMyStatus() {
+            const response = await fetch(`/api/patient/status/${currentUID}`);
+            const result = await response.json();
+
+            if (result.success) {
+                const status = result.appointment.status;
+
+                if (status === 'completed') {
+                    // 💡 ပြီးဆုံးသွားလျှင် Thank you စာသားပြမည်
+                    document.getElementById("reader").style.display = "none";
+                    document.getElementById("resultBox").style.display = "none";
+                    document.getElementById("completedBox").style.display = "block";
+                
+                } else if (status === 'consulting') {
+                    // 🌟 ဤနေရာသည် "Call Next" ခေါ်လိုက်သောအခါ မိမိအလှည့်ဖြစ်ပါက ပေါ်လာမည့် အပိုင်းဖြစ်သည်
+                    document.getElementById("reader").style.display = "none";
+                    document.getElementById("completedBox").style.display = "none";
+                    const resultBox = document.getElementById("resultBox");
+                    resultBox.style.display = "block";
+                    
+                    // 🔔 အလှည့်ရောက်ကြောင်း Notification အသံမြည်စေမည့် အပိုင်း
+                    if (!hasPlayedTurnSound) {
+                        try {
+                            // 💡 အခမဲ့ အသုံးပြုနိုင်သော Notification အသံဖိုင် (Mixkit)
+                            const notiSound = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+                            notiSound.play();
+                            hasPlayedTurnSound = true; // အသံ တစ်ခါမြည်ပြီးကြောင်း မှတ်သားမည်
+                        } catch (err) {
+                            console.log("Browser Auto-play Policy ကြောင့် အသံဖွင့်၍ မရပါ။", err);
+                        }
+                    }
+
+                    // ခရမ်းရောင် Card အဖြစ် ပြောင်းမည်
+                    resultBox.style.background = "#f3e8ff";
+                    resultBox.style.border = "2px dashed #a855f7";
+                    resultBox.innerHTML = `
+                        <div style="font-size: 50px; margin-bottom: 10px; animation: popIn 0.4s ease;">📢</div>
+                        <h3 style="color: #7e22ce; font-size: 22px; margin-bottom: 10px; font-weight: bold;">ဆရာဝန်ခန်းထဲသို့ ဝင်ပါ</h3>
+                        <p style="color: #9333ea; font-size: 15px; font-weight: bold;">လူကြီးမင်း၏ အလှည့် ရောက်ရှိနေပါပြီ။</p>
+                        <div style="margin-top: 20px; font-size: 15px; color: #6b7280; background: white; padding: 10px; border-radius: 10px; display: inline-block; margin-bottom: 20px;">
+                            Token Number: <span style="font-weight: 900; color: #111827; font-size: 20px;">${result.appointment.token_number}</span>
+                        </div>
+                        <button onclick="window.location.href='patient.html'" style="background: #a855f7; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s;">
+                            🏠 ပင်မစာမျက်နှာသို့ ပြန်သွားမည်
+                        </button>
+                    `;
+                
+                } else if (status === 'arrived') {
+                    // 💡 ရောက်ရှိပြီး (စောင့်နေဆဲ) 
+                    hasPlayedTurnSound = false; // စောင့်နေဆဲဖြစ်သဖြင့် အသံပြန်ဖွင့်ခွင့် ပေးထားမည်
+
+                    document.getElementById("reader").style.display = "none";
+                    document.getElementById("completedBox").style.display = "none";
+                    document.getElementById("resultBox").style.display = "block";
+                    
+                    myCurrentToken = result.appointment.token_number;
+                    myDocCode = myCurrentToken.replace(/[0-9]/g, '');
+                    
+                    document.getElementById("myToken").innerText = myCurrentToken;
+                    
+                    fetchNowServing();
+                
+                } else if (status === 'waiting') {
+                    // 💡 မရောက်သေးလျှင် ကင်မရာ ဖွင့်မည်
+                    hasPlayedTurnSound = false; 
+                    
+                    document.getElementById("resultBox").style.display = "none";
+                    document.getElementById("completedBox").style.display = "none";
+                    document.getElementById("reader").style.display = "block";
+                    startScanner();
+                }
+            } else {
+                document.getElementById("reader").innerHTML = "<p style='color:red; text-align:center; padding: 20px; font-weight: 500;'>ယနေ့အတွက် Booking မရှိပါ။</p>";
+            }
+        }
+    </script>
+</body>
+</html>

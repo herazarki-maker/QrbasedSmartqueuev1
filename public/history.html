@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Medical History</title>
+   <link rel="stylesheet" href="history.css">
+</head>
+<body>
+
+    <div class="container">
+        <div class="top-nav">
+            <a href="patient.html" class="back-btn">🔙Back</a>
+            <h2>📚 Medical History</h2>
+        </div>
+
+        <div class="history-list" id="historyList">
+            <p style="text-align: center; color: #777;">Loading History...</p>
+        </div>
+    </div>
+
+    <script>
+        window.onload = async function() {
+            const loggedInUID = localStorage.getItem("loggedInUID");
+            if (!loggedInUID) {
+                alert("ကျေးဇူးပြု၍ Login အရင်ဝင်ပါ။");
+                window.location.href = "/";
+                return;
+            }
+
+            const listDiv = document.getElementById("historyList");
+            const response = await fetch(`/api/patient-history/${loggedInUID}`);
+            const result = await response.json();
+            
+            listDiv.innerHTML = "";
+
+            if (result.success && result.history.length > 0) {
+                result.history.forEach(record => {
+                    // 💡 ရက်စွဲကို သပ်ရပ်အောင် ပြင်ဆင်ခြင်း
+                    const dateObj = new Date(record.appointment_date);
+                    const formattedDate = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+                    // 💡 Prescription မရှိခဲ့လျှင် ပြမည့်စာသား
+                    const pText = record.prescription ? record.prescription : "ဆေးစာ မှတ်တမ်း မရှိပါ။";
+
+                    const card = document.createElement("div");
+                    card.className = "history-card";
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <div class="date">📅 Date: ${formattedDate}</div>
+                            <div class="status ${record.status ? record.status.toLowerCase() : 'completed'}">${record.status || 'Completed'}</div>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="doc-name">👨‍⚕️ Dr. ${record.doctor_code}</h3>
+                            <div class="token-info">Token: ${record.token_number}</div>
+                            <div style="margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                                <strong>📝 ဆေးစာ:</strong><br/>
+                                <span style="color: #475569; font-size: 14px;">${pText}</span>
+                            </div>
+                        </div>
+                    `;
+                    listDiv.appendChild(card);
+                });
+            } else {
+                listDiv.innerHTML = `<div class="no-data">📌 ယခင် ပြသခဲ့သော ဆေးမှတ်တမ်း မရှိသေးပါ။</div>`;
+            }
+        };
+    </script>
+</body>
+</html>

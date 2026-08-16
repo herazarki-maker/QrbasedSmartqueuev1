@@ -1,0 +1,288 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    /* Background ကို ရိုးရိုးအရောင်အစား Gradient ပြောင်းထားသည် */
+    background: linear-gradient(135deg, #eaf4ff 0%, #dbeafe 100%);
+    color: #333;
+    min-width: 1024px;
+    min-height: 100vh;
+}
+
+/* Navbar */
+.navbar {
+    background: linear-gradient(90deg, #0d6efd 0%, #0a58ca 100%);
+    color: white;
+    padding: 15px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.2);
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    letter-spacing: 0.5px;
+}
+
+.role-badge {
+    background: #ffc107;
+    color: #000;
+    font-size: 13px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    box-shadow: 0 2px 5px rgba(255, 193, 7, 0.3);
+}
+
+.logout-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+    background: white;
+    color: #0d6efd;
+    transform: translateY(-2px);
+}
+
+/* Dashboard Content */
+.dashboard-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 20px;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.header-actions h2 { color: #0d6efd; font-size: 30px; margin-bottom: 5px; }
+.header-actions p { color: #666; font-size: 16px; }
+
+/* Button Group */
+.action-buttons {
+    display: flex;
+    gap: 15px;
+}
+
+.add-patient-btn, .reset-btn {
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.add-patient-btn {
+    background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+    color: white;
+}
+
+.add-patient-btn:hover {
+    box-shadow: 0 6px 15px rgba(25, 135, 84, 0.3);
+    transform: translateY(-3px);
+}
+
+.reset-btn {
+    background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);
+    color: white;
+}
+
+.reset-btn:hover {
+    box-shadow: 0 6px 15px rgba(220, 53, 69, 0.3);
+    transform: translateY(-3px);
+}
+
+/* Stats Cards */
+.stats-cards {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.card {
+    background: white;
+    flex: 1;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+    border-left: 6px solid #0d6efd;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+}
+
+.card.warning { border-left-color: #ffc107; }
+
+.card h3 { font-size: 45px; color: #333; margin-bottom: 5px; }
+.card p { color: #666; font-size: 16px; font-weight: 500; }
+
+/* Table Section */
+.queue-section {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+}
+
+.queue-section h3 { margin-bottom: 25px; color: #333; font-size: 22px; }
+
+.queue-table { width: 100%; border-collapse: collapse; }
+.queue-table th, .queue-table td {
+    padding: 18px 15px;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 15px;
+}
+
+.queue-table th { 
+    background: #f8f9fa; 
+    color: #555; 
+    font-weight: 600;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.queue-table tbody tr { transition: background 0.2s ease; }
+.queue-table tbody tr:hover { background: #fdfdfd; }
+
+/* Badges */
+.status, .type {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+.type.walk-in { background: #e0f2f1; color: #00796b; }
+.type.qr { background: #e3f2fd; color: #1565c0; }
+.status.waiting { background: #fff3cd; color: #856404; }
+.status.in-progress { background: #d4edda; color: #155724; }
+
+.print-btn {
+    background: #e9ecef;
+    color: #495057;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.print-btn:hover:not(:disabled) { background: #0d6efd; color: white; }
+.print-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Modal (Popup) Design with Glassmorphism */
+.modal {
+    display: none; 
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px); /* နောက်ခံကို ဝါးသွားစေရန် */
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeInModal 0.3s ease;
+}
+
+@keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background: white;
+    padding: 35px 30px;
+    border-radius: 15px;
+    width: 400px;
+    position: relative;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    transform: scale(0.95);
+    animation: scaleUp 0.3s ease forwards;
+}
+
+@keyframes scaleUp {
+    to { transform: scale(1); }
+}
+
+.modal-content h3 {
+    margin-bottom: 25px;
+    color: #333;
+    font-size: 22px;
+    text-align: center;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: border-color 0.3s ease;
+}
+
+.modal-content input:focus {
+    outline: none;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+.submit-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+.submit-btn:hover { box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3); transform: translateY(-2px); }
+
+.submit-btn.reset-submit { background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%); }
+.submit-btn.reset-submit:hover { box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3); }
+
+.close-btn {
+    position: absolute;
+    top: 15px; right: 20px;
+    font-size: 28px;
+    cursor: pointer;
+    color: #999;
+    transition: color 0.3s ease;
+}
+.close-btn:hover { color: #dc3545; }

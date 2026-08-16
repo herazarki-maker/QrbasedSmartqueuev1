@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counter - QR Smart Queue</title>
+    <link rel="stylesheet" href="admincounter.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">🏥 QR Smart Queue <span class="role-badge">Counter</span></div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </nav>
+
+    <div class="dashboard-container">
+        
+        <header class="header-actions">
+            <div>
+                <h2>Patient Management</h2>
+                <p>Register new patients and manage accounts.</p>
+            </div>
+            <div class="action-buttons">
+                <button class="add-patient-btn" onclick="openModal('createModal')">+ Create Account</button>
+                <button class="reset-btn" onclick="openModal('resetModal')">🔑 Reset Password</button>
+            </div>
+        </header>
+
+        <div class="stats-cards">
+            <div class="card">
+               <h1 id="totalPatientsCount">0</h1>
+                <p>Total Registered Patients</p>
+            </div>
+            <div class="card warning">
+               <h1 id="todayPatientsCount">0</h1>
+                <p>Registered Today</p>
+            </div>
+        </div>
+
+        <div class="queue-section">
+            <h3>Registered Patient List</h3>
+            <table class="queue-table">
+                <thead>
+                    <tr>
+                        <th>UID(account No)</th>
+                        <th>Patient Name</th>
+                        <th>Phone Number</th>
+                        <th>Address</th>
+                        <th>Created Date</th>
+                    </tr>
+                </thead>
+                <tbody id="patientTableBody"></tbody>
+            </table>
+        </div>
+
+        <div id="createModal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn" onclick="closeModal('createModal')">&times;</span>
+                <h3>Create Patient Account</h3>
+                <p style="color: #666; font-size: 13px; margin-bottom: 15px;">* Username (UID) သည် Auto ထွက်လာပါမည်။</p>
+                
+                <input type="text" id="patName" placeholder="အမည် (Name)" required>
+               <div class="input-group">
+                <label>မွေးသက္ကရာဇ် (DOB)</label>
+               
+                <input type="date" id="patientDOB" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px;">
+            </div>
+                <!-- Age ထည့်သည့် Input အောက်တွင် ဤ Code ညှပ်ထည့်ပါ -->
+                 <div class="input-group">
+                      <select id="patientGender" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                         <option value="Male">Male (ကျား)</option>
+                         <option value="Female">Female (မ)</option>
+                      </select>
+                 </div>
+                <input type="text" id="patPhone" placeholder="ဖုန်းနံပါတ် (Phone Number)" required>
+                <input type="text" id="patAddress" placeholder="နေရပ်လိပ်စာ (Address)" required>
+                <input type="password" id="patPassword" placeholder="Password (လူနာသတ်မှတ်လိုသော)" required>
+                
+                <button class="submit-btn" onclick="createAccount()">Create Account</button>
+            </div>
+        </div>
+
+        <div id="resetModal" class="modal">
+            <div class="modal-content">
+                <span class="close-btn" onclick="closeModal('resetModal')">&times;</span>
+                <h3>Reset Patient Password</h3>
+                <input type="text" id="resetUsername" placeholder="Enter Patient UID (eg. UID20260729001)" required>
+                <input type="password" id="resetNewPassword" placeholder="New Password" required>
+                <button class="submit-btn reset-submit" onclick="resetPassword()">Reset Password</button>
+            </div>
+        </div>
+
+    </div>
+
+   <script>
+        function logout() { 
+            localStorage.clear();
+            window.location.href = "/"; 
+
+        }
+        function openModal(modalId) { document.getElementById(modalId).style.display = "flex"; }
+        function closeModal(modalId) { document.getElementById(modalId).style.display = "none"; }
+
+        // 💡 ၁။ Account ဖန်တီးမည့် Function
+        async function createAccount() {
+            const name = document.getElementById("patName").value;
+            const dob = document.getElementById("patientDOB").value;
+            const gender=document.getElementById("patientGender").value;
+            const phone = document.getElementById("patPhone").value;
+            const address = document.getElementById("patAddress").value;
+            const password = document.getElementById("patPassword").value;
+
+            const response = await fetch("/create-patient", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({name,dob,gender,phone,address,password})
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert("အောင်မြင်ပါသည်။ လူနာ UID: " + result.uid);
+                
+                loadPatientData(); // Table ကို Auto Update လုပ်မည်
+                
+                document.getElementById("patName").value = "";
+                document.getElementById("patientDOB").value = "";
+                document.getElementById("patientGender").value = "";
+                document.getElementById("patPhone").value = "";
+                document.getElementById("patAddress").value = "";
+                document.getElementById("patPassword").value = "";
+                
+                closeModal('createModal');
+            } else {
+                alert(result.message);
+            }
+        }
+
+        // 💡 ၂။ Password Reset လုပ်မည့် Function
+        async function resetPassword() {
+            const username = document.getElementById("resetUsername").value;
+            const newPassword = document.getElementById("resetNewPassword").value;
+
+            if (!username || !newPassword) {
+                alert("UID နှင့် Password အသစ်ကို ပြည့်စုံစွာ ဖြည့်ပါ။");
+                return;
+            }
+
+            const response = await fetch("/reset-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, newPassword })
+            });
+
+            const result = await response.json();
+            alert(result.message);
+
+            if (result.success === true) {
+                closeModal('resetModal');
+                document.getElementById("resetUsername").value = "";
+                document.getElementById("resetNewPassword").value = "";
+            }
+        }
+
+        // 💡 ၃။ Data များကို ဆွဲထုတ်မည့် Function
+        window.onload = loadPatientData;
+
+        async function loadPatientData() {
+            try {
+                const response = await fetch("/api/admin/patients-data");
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById("totalPatientsCount").innerText = result.total;
+                    document.getElementById("todayPatientsCount").innerText = result.today;
+
+                    const tbody = document.getElementById("patientTableBody");
+                    tbody.innerHTML = ""; 
+
+                    if (result.patients.length > 0) {
+                        result.patients.forEach(patient => {
+                            const tr = document.createElement("tr");
+                            tr.innerHTML = `
+                                <td style="padding: 15px; border-bottom: 1px solid #eee;">${patient.uid}</td>
+                                <td style="padding: 15px; border-bottom: 1px solid #eee;">${patient.name}</td>
+                                <td style="padding: 15px; border-bottom: 1px solid #eee;">${patient.phone}</td>
+                                <td style="padding: 15px; border-bottom: 1px solid #eee;">${patient.address}</td>
+                                <td style="padding: 15px; border-bottom: 1px solid #eee;">${patient.created_date}</td>
+               
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color:#777;">မှတ်တမ်း မရှိသေးပါ။</td></tr>`;
+                    }
+                }
+            } catch (error) {
+                console.error("Data ဆွဲယူရာတွင် Error ဖြစ်နေပါသည်:", error);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment</title>
+    <link rel="stylesheet" href="appointment.css">
+</head>
+<body>
+
+    <div class="booking-wrapper">
+        <nav class="top-nav">
+            <button class="back-btn" onclick="goBack()">🔙 Back</button>
+            <h2>Make Appointment</h2>
+        </nav>
+
+        <div class="form-section">
+            <div id="existingBookingCard" class="hidden" style="background: #f8fafc; border: 2px dashed #3b82f6; padding: 30px 20px; border-radius: 12px; text-align: center; margin-bottom: 20px;">
+                <div style="font-size: 45px; margin-bottom: 10px;">🎟️</div>
+                <h3 style="color: #1e3a8a; margin-top: 0; font-size: 22px;">လူကြီးမင်းတွင် လက်ရှိ Booking ရှိနှင့်ပြီးပါပြီ</h3>
+                <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">သင်၏ တန်းစီအချက်အလက်များမှာ အောက်ပါအတိုင်း ဖြစ်ပါသည် -</p>
+                
+                <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 10px; text-align: left; line-height: 2; margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <div style="font-size: 16px; color: #334155;">🎫 <b>Token နံပါတ် :</b> <span id="exToken" style="color: #1d4ed8; font-weight: 800; font-size: 20px;">--</span></div>
+                    <div style="font-size: 16px; color: #334155;">👨‍⚕️ <b>ဆရာဝန် :</b> <span id="exDocName" style="color: #0f172a;">--</span></div>
+                    
+                    <div style="font-size: 16px; color: #334155;">🚪 <b>အခန်း :</b> <span id="exRoom" style="color: #7e22ce; font-weight: bold;">--</span></div>
+
+                    <div style="font-size: 16px; color: #334155;">📅 <b>ရက်စွဲ :</b> <span id="exDate" style="color: #0f172a;">--</span></div>
+                    <div style="font-size: 16px; color: #334155;">⏰ <b>အချိန် :</b> <span id="exTime" style="color: #059669; font-weight: bold;">ဆေးခန်းဖွင့်ချိန်</span></div>
+                </div>
+
+                <button onclick="goHome()" style="background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%;">🏠 ပင်မစာမျက်နှာသို့ ပြန်သွားမည်</button>
+            </div>
+            <div id="bookingFormContent">
+             <div class="input-group">
+                <label>ရောဂါ / ဌာန ရွေးချယ်ပါ</label>
+                    <select id="specialtySelect" onchange="loadDoctors()">
+                         <option value="">-- ရွေးချယ်ပါ --</option>
+                    </select>
+           
+             </div>
+
+            <div class="input-group">
+                <label>ဆရာဝန် ရွေးချယ်ပါ</label>
+                <select id="doctorSelect" onchange="showDoctorInfo()" disabled>
+                    <option value="">-- အရင်ဆုံး ဌာနရွေးပါ --</option>
+                </select>
+            </div>
+
+           <div id="docInfoCard" class="info-card hidden">
+                <h4 id="docName">Dr. Name</h4>
+                <p style="margin-bottom: 5px;">လုပ်သက်: <span id="docExp">--</span></p>
+                <p style="margin-bottom: 5px; color: #059669; font-weight: 600;">📅 ထိုင်မည့်ရက်: <span id="docDays" style="color: #1e293b;">--</span></p>
+                <p style="margin-bottom: 15px; color: #d97706; font-weight: 600;">⏰ အချိန်: <span id="docTime" style="color: #1e293b;">--</span></p>
+                <p style="margin-bottom: 15px; color: #7e22ce; font-weight: 600; background: #f3e8ff; padding: 5px 10px; border-radius: 6px; display: inline-block;">
+                    🚪 အခန်း: <span id="docRoom" style="color: #6b21a8; font-size: 16px;">--</span>
+                </p>
+                <div class="queue-status">
+                    <span>ယနေ့အတွက် စောင့်ဆိုင်းသူ:</span>
+                    <strong id="bookedCount" class="count-badge">0</strong>
+                </div>
+            </div>
+           <div style="margin-bottom: 20px; text-align: left;">
+                <label for="appointmentDate" style="display: block; margin-bottom: 8px; color: #475569; font-weight: 600;">ပြသလိုသည့် ရက်စွဲရွေးချယ်ပါ <span style="color: red;">*</span></label>
+                <input type="date" id="appointmentDate" onchange="validateSelectedDate()" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px; box-sizing: border-box; background: #f8fafc; cursor: pointer;" required>
+            </div>
+            <div class="input-group">
+                <label>လူနာ UID</label>
+                <input type="text" id="patientUID" readonly>
+                <small>မှတ်ချက် - သင့်အကောင့်မှ အလိုအလျောက် ဖြည့်ထားပါသည်။</small>
+            </div>
+
+            <button class="confirm-btn" onclick="generateToken()">Confirm Booking</button>
+        </div>
+    </div>
+       <div id="tokenModal" class="modal hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;">
+            <div class="modal-box">
+                <h3>🎉 Booking Successful!</h3>
+                <p>သင့်အတွက် Token Number</p>
+                
+                <div class="token-display" id="finalToken" style="font-size: 45px; color: #0d6efd; font-weight: 800; margin-bottom: 20px;">--</div>
+                
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; text-align: left; line-height: 2; margin-bottom: 25px;">
+                    <div style="font-size: 15px; color: #334155;">👨‍⚕️ <b>ဆရာဝန် :</b> <span id="successDocName" style="color: #0f172a;">--</span></div>
+                    <div style="font-size: 16px; color: #334155;">🚪 <b>အခန်း :</b> <span id="successRoom" style="color: #7e22ce; font-weight: bold;">--</span></div>
+                    <div style="font-size: 15px; color: #334155;">📅 <b>ရက်စွဲ :</b> <span id="successDate" style="color: #0f172a;">--</span></div>
+                    <div style="font-size: 15px; color: #334155;">⏰ <b>အချိန် :</b> <span id="successTime" style="color: #059669; font-weight: bold;">--</span></div>
+                </div>
+
+                <button class="close-btn" onclick="goHome()" style="width: 100%; padding: 12px; background: #0d6efd; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer;">Done</button>
+            </div>
+        </div>
+
+
+    <script>
+       // Browser တွင် မှတ်ထားသော UID ကို ဆွဲယူပြီး Input Box တွင် အလိုအလျောက် ဖြည့်ပေးမည်
+const currentUID = localStorage.getItem("loggedInUID");
+
+if (currentUID) {
+    document.getElementById("patientUID").value = currentUID;
+} else {
+    alert("ကျေးဇူးပြု၍ Login အရင်ဝင်ပါ။");
+    window.location.href = "/";
+}
+       let currentDoctorsList = []; // Backend မှ ရလာမည့် ဆရာဝန်များကို မှတ်ထားရန်
+
+        function goBack() { window.location.href = 'patient.html'; }
+        function goHome() { window.location.href = 'patient.html'; }
+
+        
+      // 🌟 ဌာနရွေးလိုက်တိုင်း သက်ဆိုင်ရာ ဆရာဝန်စာရင်းကို စစ်ထုတ်ပြသမည်
+        async function loadDoctors() {
+            const specValue = document.getElementById("specialtySelect").value;
+            const docSelectBox = document.getElementById("doctorSelect");
+            const infoCard = document.getElementById("docInfoCard");
+            
+            docSelectBox.innerHTML = '<option value="">-- ဆရာဝန် ရွေးပါ --</option>';
+            infoCard.classList.add("hidden");
+
+            if (specValue) {
+                docSelectBox.disabled = false;
+                
+                // 🌟 ပြင်ဆင်ချက်: ဌာနအမည် (specValue) ဖြင့် သီးသန့်ဆွဲထုတ်သည့် API အသစ်ကို ခေါ်မည်
+                const response = await fetch(`/api/doctors/${specValue}`);
+                const data = await response.json();
+
+                if(data.success) {
+                    // API က ဌာနအလိုက် စစ်ထုတ်ပြီးသားမို့ ထပ်ပြီး Filter လုပ်စရာ မလိုတော့ပါ
+                    currentDoctorsList = data.doctors; 
+                    
+                    if (currentDoctorsList.length > 0) {
+                        currentDoctorsList.forEach(doc => {
+                            let opt = document.createElement("option");
+                            // 🚨 Backend မှ d.doctor_code as id ဟု ပို့ပေးထားသဖြင့် id ကို သုံးမည်
+                            opt.value = doc.id; 
+                            opt.innerText = doc.name;
+                            docSelectBox.appendChild(opt);
+                        });
+                    } else {
+                        docSelectBox.innerHTML = '<option value="">ဒီနေ့အတွက် ဆရာဝန် မရှိပါ</option>';
+                        docSelectBox.disabled = true;
+                    }
+                }
+            } else {
+                docSelectBox.disabled = true;
+            }
+        }
+       // 🌟 ဆရာဝန်ရွေးလိုက်လျှင် အချက်အလက်နှင့် လက်ရှိလူဦးရေ ပြမည်
+        function showDoctorInfo() {
+            const selectedDocCode = document.getElementById("doctorSelect").value;
+            const infoCard = document.getElementById("docInfoCard");
+
+            if (selectedDocCode) {
+                const docDetails = currentDoctorsList.find(d => d.id === selectedDocCode || d.doctor_code === selectedDocCode);
+                
+                if (docDetails) {
+                    document.getElementById("docName").innerText = docDetails.name;
+                    document.getElementById("docExp").innerText = docDetails.experience || "မသိရပါ"; 
+                    
+                    // 🌟 အသစ်ထည့်ထားသော ရက်စွဲနှင့် အချိန်ကို လှမ်းယူပြီး ပြမည်
+                    document.getElementById("docDays").innerText = docDetails.available_days || "နေ့စဉ်"; 
+                    document.getElementById("docTime").innerText = docDetails.working_time || "10:00 AM - 12:30 PM"; 
+                    document.getElementById("docRoom").innerText = docDetails.room_number || "မသတ်မှတ်ရသေးပါ";
+                    document.getElementById("bookedCount").innerText = docDetails.booked_count || "0"; 
+                    
+                    infoCard.classList.remove("hidden");
+                }
+            } else {
+                infoCard.classList.add("hidden");
+            }
+        }
+// 🌟 ၁။ ရွေးထားသောရက်သည် ဆရာဝန်ထိုင်သော ရက်များနှင့် ကိုက်ညီမှု ရှိမရှိ စစ်ဆေးမည့် Function
+        function isDoctorAvailableOnDate(dateString, availableDaysStr) {
+            // "နေ့စဉ်" ဟု ရေးထားလျှင် မည်သည့်ရက်မဆို ရွေးခွင့်ပြုမည်
+            if (!availableDaysStr || availableDaysStr.includes("နေ့စဉ်")) return true;
+
+            const date = new Date(dateString);
+            const dayIndex = date.getDay(); // 0 မှ 6 ထိ ရမည် (0 = Sunday, 1 = Monday, ...)
+
+            // မြန်မာစာသား နှင့် JavaScript Day Index ကို ချိန်ဆက်ခြင်း
+            const dayMap = {
+                'တနင်္ဂနွေ': 0,
+                'တနင်္လာ': 1,
+                'အင်္ဂါ': 2,
+                'ဗုဒ္ဓဟူး': 3,
+                'ကြာသပတေး': 4,
+                'သောကြာ': 5,
+                'စနေ': 6
+            };
+
+            let allowedDays = [];
+            
+            // Database မှ ထွက်လာသော စာသားထဲတွင် မည်သည့်နေ့များ ပါဝင်လဲ စစ်ဆေးမည်
+            for (const [dayName, index] of Object.entries(dayMap)) {
+                if (availableDaysStr.includes(dayName)) {
+                    allowedDays.push(index);
+                }
+            }
+
+            // ခွင့်ပြုထားသောရက်များ ရှိပြီး၊ ရွေးလိုက်သောရက်သည် ထိုအထဲတွင် မပါဝင်ပါက False (ခွင့်မပြုပါ) ဟု သတ်မှတ်မည်
+            if (allowedDays.length > 0 && !allowedDays.includes(dayIndex)) {
+                return false;
+            }
+            return true;
+        }
+
+        // 🌟 ၂။ Date Picker တွင် ရက်ရွေးလိုက်တိုင်း အလိုအလျောက် အလုပ်လုပ်မည့် Function
+        function validateSelectedDate() {
+            const dateInput = document.getElementById("appointmentDate");
+            const selectedDate = dateInput.value;
+            if (!selectedDate) return;
+
+            const selectedDocCode = document.getElementById("doctorSelect").value;
+            if (!selectedDocCode) return;
+
+            // ရွေးထားသော ဆရာဝန်၏ အချက်အလက်များကို ယူမည်
+            const docDetails = currentDoctorsList.find(d => d.id === selectedDocCode || d.doctor_code === selectedDocCode);
+            if (!docDetails) return;
+
+            const availableDaysStr = docDetails.available_days || "နေ့စဉ်";
+
+            // ဆရာဝန်မထိုင်သော ရက်ဖြစ်နေပါက
+            if (!isDoctorAvailableOnDate(selectedDate, availableDaysStr)) {
+                alert(`⚠️ တောင်းပန်ပါသည်။ ဤဆရာဝန်သည် ( ${availableDaysStr} ) တွင်သာ ဆေးခန်းထိုင်ပါသည်။ ဆရာဝန်ထိုင်သော ရက်များကိုသာ ရွေးချယ်ပေးပါ။`);
+                dateInput.value = ""; // မှားရွေးထားသော ရက်စွဲကို ပြန်ဖျက်ပစ်မည်
+            }
+        }
+       // Confirm နှိပ်ပါက Backend သို့ Booking တင်မည်
+        async function generateToken() {
+            const specValue = document.getElementById("specialtySelect").value;
+            const selectedDocCode = document.getElementById("doctorSelect").value;
+            const pUid = document.getElementById("patientUID").value;
+            // 🌟 ရွေးထားသော ရက်စွဲကိုပါ လှမ်းယူမည်
+            const selectedDate = document.getElementById("appointmentDate").value; 
+            
+            if (!specValue || !selectedDocCode || !selectedDate) {
+                alert("အချက်အလက်များကို ပြည့်စုံစွာ ရွေးချယ်ပါ။");
+                return;
+            }
+
+            // Backend သို့ Data ပို့ခြင်း
+            const response = await fetch("/api/book-appointment", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    uid: pUid, // 💡 Backend ကတောင်းမည့် နာမည်အတိုင်း (uid) လို့ သုံးထားသည်
+                    doctor_code: selectedDocCode,
+                    date: selectedDate // 🌟 ရက်စွဲကိုပါ Server ဆီ ထည့်ပို့လိုက်ပြီ!
+                })
+            });
+
+            const result = await response.json();
+if (result.success) {
+                document.getElementById("finalToken").innerText = result.token || "✅";
+                
+                const docSelect = document.getElementById("doctorSelect");
+                const docName = docSelect.options[docSelect.selectedIndex].text;
+                document.getElementById("successDocName").innerText = docName;
+                
+                document.getElementById("successDate").innerText = selectedDate;
+                const docDetails = currentDoctorsList.find(d => d.id === selectedDocCode || d.doctor_code === selectedDocCode);
+                document.getElementById("successRoom").innerText = docDetails ? (docDetails.room_number || "မသတ်မှတ်ရသေးပါ") : "မသတ်မှတ်ရသေးပါ";
+                // 🌟 Modal တွင်လည်း အချိန်ကို သေချာအောင် လှမ်းခေါ်မည်
+                try {
+                    const setRes = await fetch("/api/settings");
+                    const setData = await setRes.json();
+                    if (setData.success && setData.settings && setData.settings.open_time) {
+                        document.getElementById("successTime").innerText = setData.settings.open_time + " နာရီမှ စတင်ပါမည်";
+                    } else {
+                        document.getElementById("successTime").innerText = "10:00 နာရီမှ စတင်ပါမည်";
+                    }
+                } catch(e) {
+                    document.getElementById("successTime").innerText = "10:00 နာရီမှ စတင်ပါမည်";
+                }
+
+                document.getElementById("tokenModal").classList.remove("hidden");
+                document.getElementById("tokenModal").style.display = "flex";
+            } else {
+                alert(result.message);
+            }
+        }
+       
+        // 💡 Page ပွင့်တာနဲ့ Database မှ Specialty (ဌာန) အမည်များကို လှမ်းခေါ်မည်
+        async function loadSpecialties() {
+            try {
+                // (မှတ်ချက်: ဒီ API ကို server.js မှာ ရေးထားပြီးသား ရှိရပါမည် သို့မဟုတ် /api/doctors ကနေ ဆွဲထုတ်မည်)
+                const response = await fetch('/api/doctors'); 
+                const data = await response.json();
+
+                if (data.success) {
+                    const specialtySelect = document.getElementById("specialtySelect");
+                    
+                    // ဆရာဝန်တွေရဲ့ Specialty တွေကို ပွားမနေအောင် Set ဖြင့် စစ်ထုတ်မည်
+                    const uniqueSpecialties = [...new Set(data.doctors.map(doc => doc.specialty))];
+
+                    uniqueSpecialties.forEach(spec => {
+                        if(spec) { // Blank မဖြစ်အောင် စစ်ခြင်း
+                            let opt = document.createElement("option");
+                            opt.value = spec; // တကယ်လို့ Database မှာ English လိုဆိုရင် English လိုဝင်မည်
+                            opt.innerText = spec;
+                            specialtySelect.appendChild(opt);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error("Error loading specialties:", error);
+            }
+        }
+
+      // 🌟 Page စပွင့်တာနဲ့ ဒီလူနာမှာ Active Booking ရှိမရှိ စစ်ဆေးမည်
+      // 🌟 Page စပွင့်တာနဲ့ ဒီလူနာမှာ Active Booking ရှိမရှိ စစ်ဆေးမည်
+        window.onload = async function() {
+            if (!currentUID) {
+                alert("ကျေးဇူးပြု၍ Login အရင်ဝင်ပါ။");
+                window.location.href = "/";
+                return;
+            }
+
+            // (၁) ဆရာဝန်ဌာနစာရင်းများကို အရင် ခေါ်တင်မည်
+            loadSpecialties();
+
+            // (၂) Server ဆီသို့ ဤ UID ဖြင့် Booking ရှိမရှိ လှမ်းစစ်မည်
+            try {
+                const response = await fetch(`/api/patient/active-booking/${currentUID}`);
+                const result = await response.json();
+
+                if (result.success && result.hasBooking) {
+                    // Booking ရှိနှင့်ပြီးသားဆိုလျှင် Form ကိုဖျောက်၍ Existing Card ကိုပြမည်
+                    document.getElementById("bookingFormContent").style.display = "none";
+                    document.getElementById("existingBookingCard").classList.remove("hidden");
+
+                    // အချက်အလက်များ ထည့်သွင်းမည်
+                    document.getElementById("exToken").innerText = result.booking.token_number;
+                    document.getElementById("exDocName").innerText = result.booking.doctor_name || result.booking.doctor_code;
+                    
+                    // 🌟 ဆရာဝန်များစာရင်းကို ဆွဲထုတ်ပြီး အခန်းနံပါတ်ကို ရှာဖွေထည့်သွင်းမည် 🌟
+                    try {
+                        const docsRes = await fetch('/api/doctors');
+                        const docsData = await docsRes.json();
+                        if (docsData.success) {
+                            const myDoc = docsData.doctors.find(d => d.doctor_code === result.booking.doctor_code || d.id === result.booking.doctor_code);
+                            document.getElementById("exRoom").innerText = myDoc && myDoc.room_number ? myDoc.room_number : "မသတ်မှတ်ရသေးပါ";
+                        } else {
+                            document.getElementById("exRoom").innerText = "မသတ်မှတ်ရသေးပါ";
+                        }
+                    } catch (e) {
+                        document.getElementById("exRoom").innerText = "မသတ်မှတ်ရသေးပါ";
+                    }
+                    
+                    // 🚨 ပိုနေသော Bracket များနှင့် rawDate ကို ဖြုတ်ပြီး ပြင်ဆင်ထားပါသည်
+                    // ရက်စွဲကို သေသပ်စွာ ပြောင်းမည်
+                    const rawDate = result.booking.appointment_date;
+                    const cleanDate = new Date(rawDate).toLocaleDateString('en-CA');
+                    document.getElementById("exDate").innerText = cleanDate;
+                    
+                    // 🌟 (၃) ဆေးခန်းဖွင့်ချိန်ကို သေချာအောင် လှမ်းခေါ်မည်
+                    try {
+                        const setRes = await fetch("/api/settings");
+                        const setData = await setRes.json();
+                        if (setData.success && setData.settings && setData.settings.open_time) {
+                            document.getElementById("exTime").innerText = setData.settings.open_time + " နာရီမှ စတင်ပါမည်";
+                        } else {
+                            document.getElementById("exTime").innerText = "10:00 နာရီမှ စတင်ပါမည်"; // API မရပါက Default 10:00 ပြမည်
+                        }
+                    } catch(err) {
+                        document.getElementById("exTime").innerText = "10:00 နာရီမှ စတင်ပါမည်";
+                    }
+                } // 🌟 if (result.success && result.hasBooking) ၏ အပိတ် Bracket အမှန်
+            } catch (error) {
+                console.error("Check Active Booking Error:", error);
+            }
+
+            // ရက်စွဲအတွက် အတိတ်ကရက်တွေ ပိတ်မည့်အပိုင်း
+            const dateInput = document.getElementById('appointmentDate');
+            if (dateInput) {
+                const todayDate = new Date().toLocaleDateString('en-CA');
+                dateInput.setAttribute('min', todayDate); 
+                dateInput.value = todayDate; 
+            }
+        };
+    </script>
+</body>
+</html>

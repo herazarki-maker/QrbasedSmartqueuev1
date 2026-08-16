@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Queue - Login</title>
+    <style>
+        /* Modern Font ကို Google မှ လှမ်းယူပါမည် */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        
+        * { 
+            margin: 0; padding: 0; box-sizing: border-box; 
+            font-family: 'Poppins', 'Segoe UI', sans-serif; 
+        }
+        
+        body { 
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); 
+            height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 20px;
+        }
+        
+        /* 🌟 အဓိက အဖြူရောင် Card ကြီး */
+        .login-container { 
+            display: flex; 
+            background: white; 
+            border-radius: 24px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08); 
+            overflow: hidden; 
+            width: 900px; 
+            max-width: 100%; 
+            min-height: 500px; 
+        }
+        
+        /* 🔵 ဘယ်ဘက်ခြမ်း (Branding အပိုင်း) */
+        .login-left { 
+            background: linear-gradient(135deg, #0ea5e9, #2563eb); 
+            width: 50%; 
+            padding: 50px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            color: white; 
+            text-align: center; 
+        }
+        .login-left .icon { font-size: 70px; margin-bottom: 20px; text-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .login-left h1 { font-size: 32px; margin-bottom: 10px; font-weight: 600; letter-spacing: 1px; }
+        .login-left p { font-size: 16px; opacity: 0.9; line-height: 1.6; }
+        .badge { margin-top: auto; background: rgba(255,255,255,0.2); padding: 8px 20px; border-radius: 20px; font-size: 13px; backdrop-filter: blur(5px); }
+
+        /* ⚪ ညာဘက်ခြမ်း (Login Form အပိုင်း) */
+        .login-right { 
+            width: 50%; 
+            padding: 60px 50px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+        }
+        .login-right h2 { font-size: 28px; color: #1e293b; margin-bottom: 8px; font-weight: 600; }
+        .login-right .subtitle { color: #64748b; font-size: 15px; margin-bottom: 35px; }
+        
+        .input-group { margin-bottom: 22px; }
+        .input-group label { display: block; margin-bottom: 8px; color: #475569; font-size: 14px; font-weight: 600; }
+        .input-group input { 
+            width: 100%; 
+            padding: 14px 16px; 
+            border: 2px solid #e2e8f0; 
+            border-radius: 12px; 
+            font-size: 15px; 
+            transition: all 0.3s ease; 
+            outline: none; 
+            background: #f8fafc;
+            color: #0f172a;
+        }
+        .input-group input:focus { 
+            border-color: #3b82f6; 
+            background: white;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); 
+        }
+        
+        /* 🔘 Login ခလုတ် */
+        .login-btn { 
+            width: 100%; 
+            padding: 15px; 
+            background: #3b82f6; 
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            font-size: 16px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            margin-top: 15px; 
+            box-shadow: 0 4px 15px rgba(59,130,246,0.3); 
+        }
+        .login-btn:hover { 
+            background: #2563eb; 
+            transform: translateY(-3px); 
+            box-shadow: 0 8px 25px rgba(59,130,246,0.4); 
+        }
+
+        /* 📱 ဖုန်းများအတွက် Responsive ဖြစ်စေရန် */
+        @media (max-width: 768px) {
+            .login-container { flex-direction: column; }
+            .login-left, .login-right { width: 100%; }
+            .login-left { padding: 40px 20px; min-height: 250px; }
+            .badge { margin-top: 30px; }
+            .login-right { padding: 40px 30px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        
+        <!-- ဘယ်ဘက်ခြမ်း -->
+        <div class="login-left">
+            <div class="icon">🏥</div>
+            <h1>Smart Queue</h1>
+            <p>Advanced Hospital Management System</p>
+            <div class="badge">Secure and Care</div>
+        </div>
+
+        <!-- ညာဘက်ခြမ်း -->
+        <div class="login-right">
+            <h2>Welcome Back 👋</h2>
+            <p class="subtitle">Please enter your details to sign in.</p>
+            
+            <div class="input-group">
+                <label>User ID(UID)</label>
+                <!-- 🌟 ID ကို username ဟု ပြန်ထားပေးထားသဖြင့် မင်း၏ login.js နှင့် အံကိုက်ဖြစ်ပါမည် -->
+                <input type="text" id="username" placeholder="Enter your UID" autocomplete="off">
+            </div>
+            
+            <div class="input-group">
+                <label>Password</label>
+                <!-- 🌟 ID ကို password ဟု ပြန်ထားပေးထားပါသည် -->
+                <input type="password" id="password" placeholder="Enter your password">
+            </div>
+            
+            <!-- 🌟 မင်း၏ login.js ထဲက login() function ကို လှမ်းခေါ်ပါမည် -->
+            <button class="login-btn" onclick="login()">Sign In to Portal</button>
+        </div>
+
+    </div>
+
+    <!-- 💡 မင်းရဲ့ login.js ကို ပြန်ချိတ်ပေးထားပါတယ် -->
+    <script src="js/login.js"></script>
+
+</body>
+</html>

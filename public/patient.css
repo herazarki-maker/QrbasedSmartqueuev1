@@ -1,0 +1,179 @@
+/* 🌟 အခြေခံ ဖောင့်နှင့် Background အပြင်အဆင် */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #f3f7fb; /* ပိုလင်းပြီး သန့်ရှင်းသော နောက်ခံ */
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    justify-content: center;
+}
+
+/* App တစ်ခုလုံးကို ဖုန်း Screen လို သပ်ရပ်သွားစေရန် */
+.app-container {
+    width: 100%;
+    max-width: 450px;
+    background: #ffffff;
+    min-height: 100vh;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.08); /* ဘေးဘက်တွင် အရိပ်အိအိလေး */
+    overflow: hidden;
+    position: relative;
+}
+
+/* 🌟 ခေါင်းစီးပိုင်း (Header) ကို Modern Gradient နှင့် ကွေးနေသော ပုံစံလုပ်ခြင်း */
+.profile-header {
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    padding: 40px 20px 30px;
+    text-align: center;
+    color: white;
+    border-radius: 0 0 35px 35px; /* အောက်ခြေကို အဝိုင်းလေး ကွေးထားမည် */
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
+    margin-bottom: -15px;
+}
+
+/* Avatar ပုံစံကို လုံးဝင်းပြီး အရိပ်ထည့်ခြင်း */
+.avatar {
+    font-size: 50px;
+    background: rgba(255, 255, 255, 0.2);
+    width: 90px;
+    height: 90px;
+    line-height: 90px;
+    border-radius: 50%;
+    margin: 0 auto 15px;
+    border: 3px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.profile-header h2 {
+    margin: 0 0 8px;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.user-info {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    font-size: 13px;
+    opacity: 0.9;
+}
+
+/* UID နှင့် Age ကို ဆေးတောင့်ပုံစံ (Pill Shape) လေး လုပ်ခြင်း */
+.user-info p {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 5px 15px;
+    border-radius: 20px;
+    margin: 0;
+    backdrop-filter: blur(5px);
+}
+
+/* 🌟 Card များကို အိစက်နေအောင် ပြင်ခြင်း */
+.card {
+    padding: 35px 20px 20px;
+    background: transparent;
+}
+
+.menu-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ခလုတ်များကို ခေတ်မီသော Card ပုံစံ ပြောင်းခြင်း */
+.nav-button {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03); /* အရိပ် အပျော့စား */
+    transition: all 0.3s ease;
+    text-decoration: none;
+    width: 100%;
+}
+
+/* Mouse တင်လျှင် Card လေး ကြွတက်လာစေရန် */
+.nav-button:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
+    border-color: #bfdbfe;
+}
+
+/* Icon များကို ထင်ရှားအောင် ပြင်ခြင်း */
+.nav-button .icon {
+    font-size: 26px;
+    margin-right: 18px;
+    background: #eff6ff;
+    width: 55px;
+    height: 55px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 14px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.btn-text h3 {
+    margin: 0 0 4px;
+    color: #1e293b;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.btn-text p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 400;
+}
+
+/* 🌟 Cancel Button ကို သပ်ရပ်လှပသော အနီရောင် ပြောင်းခြင်း */
+.nav-button[onclick="cancelMyAppointment()"] {
+    background: #fff5f5;
+    border: 1px solid #fed7d7;
+}
+
+.nav-button[onclick="cancelMyAppointment()"] .icon {
+    background: #fee2e2;
+    font-size: 20px;
+}
+
+.nav-button[onclick="cancelMyAppointment()"]:hover {
+    box-shadow: 0 10px 25px rgba(220, 38, 38, 0.12);
+    border-color: #fecaca;
+}
+
+/* 🌟 Logout Button ကို အောက်ခြေတွင် သပ်ရပ်စွာ ထားခြင်း */
+.logout-btn {
+    width: 100%;
+    margin-top: 30px;
+    background: #f8fafc;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.logout-btn:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+/* Warning Banner ပြင်ဆင်ခြင်း */
+#warningBanner {
+    margin-top: 20px !important;
+    background: rgba(255, 235, 156, 0.9) !important;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    color: #d97706 !important;
+    border: none !important;
+}

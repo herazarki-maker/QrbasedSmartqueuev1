@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Portal</title>
+    <link rel="stylesheet" href="patient.css">
+    
+    <!-- 🌟 Socket.io ကို လှမ်းချိတ်ပါမည် (Live Update အတွက်) 🌟 -->
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <style>
+        /* Popup အိစက်စွာ ထွက်လာစေရန် Animation */
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <header class="profile-header">
+            <div class="avatar">👤</div>
+                <h2 id="displayName">Loading...</h2>
+                <div class="user-info">
+                <p>UID: <span id="displayUID">-----</span></p>
+                <p>Age: <span id="displayAge">--</span></p>
+                </div>
+                <div id="warningBanner" style="display: none; background: #fff3cd; color: #856404; padding: 15px; text-align: center; font-weight: bold; margin: 15px 20px; border-radius: 8px; border: 1px solid #ffeeba;">
+                  ⚠️ Warning: Your account is currently under warning due to violation of rules.
+                </div>
+        </header>
+        
+        <div class="card">
+            <main class="menu-section">
+                <button class="nav-button appointment-btn" onclick="location.href='appointment.html'">
+                    <span class="icon">📅</span>
+                    <div class="btn-text">
+                        <h3>Book Appointment</h3>
+                        <p>ရောဂါနှင့် ဆရာဝန် ရွေးချယ်ရန်</p>
+                    </div>
+                </button>
+
+                <button class="nav-button scanner-btn" onclick="location.href='scanner.html'">
+                    <span class="icon">📷</span>
+                    <div class="btn-text">
+                        <h3>Scan QR Token</h3>
+                        <p>ဆေးခန်းရောက်ကြောင်း အတည်ပြုရန်</p>
+                    </div>
+                </button>
+
+                <button class="nav-button history-btn" onclick="location.href='history.html'">
+                    <span class="icon">📜</span>
+                    <div class="btn-text">
+                        <h3>Medical History</h3>
+                        <p>ဆေးမှတ်တမ်းဟောင်းများ ကြည့်ရန်</p>
+                    </div>
+                </button>
+                <button class="nav-button" onclick="cancelAppointment()" style="background-color: #fef2f2; border: 1px solid #fca5a5;">
+                    <span class="icon">❌</span>
+                    <div class="btn-text">
+                        <h3 style="color: #dc2626;">Cancel Appointment</h3>
+                        <p style="color: #ef4444;">ယူထားသော နံပါတ်ကို ပြန်ဖျက်ရန်</p>
+                    </div>
+                </button>
+            </main>
+
+            <button class="logout-btn" onclick="logoutAccount()">Logout</button>
+        </div>
+    </div>
+
+    <!-- 🌟 သာမန် Alert များအတွက် Modal 🌟 -->
+    <div id="smartAlertModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 9999; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; backdrop-filter: blur(3px);">
+        <div id="smartAlertBox" style="background: white; padding: 25px 30px; border-radius: 16px; width: 320px; max-width: 80%; text-align: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+            <div id="smartAlertIcon" style="font-size: 50px; margin-bottom: 15px;"></div>
+            <h3 id="smartAlertTitle" style="margin: 0 0 10px 0; color: #1e293b; font-size: 20px;"></h3>
+            <p id="smartAlertMessage" style="margin: 0 0 25px 0; color: #64748b; font-size: 15px; line-height: 1.5;"></p>
+            <button onclick="closeSmartAlert()" style="background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%;">OK</button>
+        </div>
+    </div>
+
+    <!-- 🌟 ဆရာဝန်အခန်းထဲဝင်ရန် အသိပေးမည့် ခရမ်းရောင် Popup (Modal) နှင့် အသံ 🌟 -->
+    <div id="consultingModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+        <div style="background: #f3e8ff; border: 2px dashed #a855f7; padding: 30px; border-radius: 16px; width: 320px; max-width: 80%; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <div style="font-size: 50px; margin-bottom: 10px; animation: popIn 0.4s ease;">📢</div>
+            <h3 style="color: #7e22ce; font-size: 22px; margin-bottom: 10px; font-weight: bold;">ဆရာဝန်ခန်းထဲသို့ ဝင်ပါ</h3>
+            <p style="color: #9333ea; font-size: 15px; font-weight: bold;">လူကြီးမင်း၏ အလှည့် ရောက်ရှိနေပါပြီ။</p>
+            <div style="margin-top: 20px; font-size: 15px; color: #6b7280; background: white; padding: 10px; border-radius: 10px; display: inline-block; margin-bottom: 20px;">
+                Token Number: <span id="consultingTokenText" style="font-weight: 900; color: #111827; font-size: 20px;">--</span>
+            </div>
+            <button onclick="document.getElementById('consultingModal').style.display='none'" style="background: #a855f7; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s;">
+                အိုကေ (OK)
+            </button>
+        </div>
+    </div>
+   
+    <script>
+        const currentUID = localStorage.getItem("loggedInUID");
+        const socket = io(); // Socket.io စတင်ချိတ်ဆက်မည်
+        let hasPlayedTurnSound = false; // အသံ ခဏခဏ ထပ်မမြည်စေရန်
+
+        // 🌟 Server မှ update_queue signal လာတိုင်း လူနာ၏ Status ကို စစ်မည်
+        socket.on("update_queue", () => {
+            checkMyTurnStatus();
+        });
+
+        // 🌟 လူနာ၏ အလှည့်ရောက်/မရောက် စစ်ဆေးမည့် Function
+        async function checkMyTurnStatus() {
+            if (!currentUID) return;
+            try {
+                const response = await fetch(`/api/patient/status/${currentUID}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const status = result.appointment.status;
+                    
+                    if (status === 'consulting') {
+                        // ဆရာဝန်ခန်းထဲ ဝင်ရမည့် အခြေအနေဆိုပါက ခရမ်းရောင် Popup ပြမည်
+                        if (!hasPlayedTurnSound) {
+                            try {
+                                const notiSound = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+                                notiSound.play();
+                                hasPlayedTurnSound = true;
+                            } catch (err) {
+                                console.log("Browser Auto-play Policy ကြောင့် အသံဖွင့်၍ မရပါ။", err);
+                            }
+                        }
+                        document.getElementById('consultingTokenText').innerText = result.appointment.token_number;
+                        document.getElementById('consultingModal').style.display = 'flex';
+                    } else {
+                        // အခြား Status ဖြစ်သွားလျှင် Sound Flag ပြန်ဖြုတ်ပြီး Popup ပိတ်မည်
+                        hasPlayedTurnSound = false;
+                        document.getElementById('consultingModal').style.display = 'none';
+                    }
+                }
+            } catch (err) {
+                console.error("Error checking status:", err);
+            }
+        }
+
+        // Page စတက်တာနဲ့ Profile Data ကို Backend မှ လှမ်းဆွဲမည်
+        async function loadProfile() {
+            if (!currentUID) {
+                window.location.href = "/"; 
+                return;
+            }
+
+            const response = await fetch(`/api/patient-profile/${currentUID}`);
+            const data = await response.json();
+
+            if (data.success) {
+                document.getElementById("displayName").innerText = data.profile.name;
+                document.getElementById("displayUID").innerText = data.profile.uid;
+                document.getElementById("displayAge").innerText = data.profile.age;
+            } else {
+                alert("Profile အချက်အလက်များ ရယူ၍ မရပါ။");
+            }
+        }
+
+        function logoutAccount() {
+            localStorage.clear();
+            window.location.href = "/";
+        }
+
+        window.onload = async function() {
+            if (!currentUID) {
+                alert("ကျေးဇူးပြု၍ Login အရင်ဝင်ပါ။");
+                window.location.href = "/";
+                return;
+            }
+
+            try {
+                // အကောင့် ရှိ/မရှိ စစ်ဆေးခြင်း
+                const verifyRes = await fetch(`/api/verify-patient/${currentUID}`);
+                const verifyData = await verifyRes.json();
+                
+                if (!verifyData.exists) {
+                    alert("⚠️ သင့်အကောင့်ကို Admin မှ ပိတ်ပင်/ဖျက်သိမ်း လိုက်ပါပြီ။");
+                    localStorage.clear(); 
+                    window.location.href = "/"; 
+                    return;
+                }
+
+                // လူနာ၏ Profile အချက်အလက်များကို ဆွဲထုတ်ခြင်း
+                const profileRes = await fetch(`/api/patient-profile/${currentUID}`);
+                const result = await profileRes.json();
+
+                if (result.success) {
+                    const profile = result.profile;
+                    
+                    document.getElementById("displayName").innerText = `${profile.name}`;
+                    document.getElementById("displayUID").innerText = `${profile.uid}`;
+                    document.getElementById("displayAge").innerText = `${profile.age}`;
+
+                    localStorage.setItem("patientStatus", profile.status);
+
+                    const warningBanner = document.getElementById('warningBanner');
+                    if (warningBanner) {
+                        if (profile.status === 'warning') {
+                            warningBanner.style.display = 'block';
+                        } else {
+                            warningBanner.style.display = 'none'; 
+                        }
+                    }
+                    
+                    // 🌟 Page စတက်သည်နှင့် လူနာ၏ လက်ရှိတန်းစီ Status ကို တစ်ခါတည်း စစ်ဆေးပေးမည်
+                    checkMyTurnStatus();
+
+                } else {
+                    alert("လူနာအချက်အလက် ရယူ၍ မရပါ။");
+                }
+            } catch (error) {
+                console.error("Error fetching profile:", error);
+            }
+        };
+
+        async function cancelAppointment() {
+            const isConfirmed = confirm("⚠️ လူကြီးမင်း၏ Booking ကို တကယ် ပယ်ဖျက်မှာ သေချာပြီလား?");
+            if (!isConfirmed) return;
+
+            try {
+                const response = await fetch("/api/patient/cancel", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ uid: currentUID }) 
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSmartAlert(result.message, "success");
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showSmartAlert(result.message, "warning");
+                }
+            } catch (error) {
+                console.error("Error cancelling appointment:", error);
+                showSmartAlert("Network Error ကြောင့် ဖျက်၍ မရပါ။", "error");
+            }
+        }
+
+        function showSmartAlert(message, type = 'success') {
+            const modal = document.getElementById('smartAlertModal');
+            const icon = document.getElementById('smartAlertIcon');
+            const title = document.getElementById('smartAlertTitle');
+
+            if (type === 'success') {
+                icon.innerHTML = '✅'; title.innerText = 'Success!';
+            } else if (type === 'error') {
+                icon.innerHTML = '❌'; title.innerText = 'Error!';
+            } else if (type === 'warning') {
+                icon.innerHTML = '⚠️'; title.innerText = 'Warning!';
+            }
+            
+            document.getElementById('smartAlertMessage').innerText = message;
+            modal.style.display = 'flex';
+            setTimeout(() => modal.style.opacity = '1', 10);
+        }
+
+        function closeSmartAlert() {
+            const modal = document.getElementById('smartAlertModal');
+            modal.style.opacity = '0';
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+    </script>
+</body>
+</html>
