@@ -313,7 +313,13 @@ app.get("/api/patient-profile/:uid", (req, res) => {
 // =================================================================
 app.post('/api/check-in', (req, res) => {
     const { uid, qr_text } = req.body;
-    const today = new Date().toLocaleDateString('en-CA'); 
+    
+    // 🌟 ပြင်ဆင်ချက် (၁) - Server Timezone ပြဿနာကို ကျော်လွှားရန် getTodayDate() ကို သုံးမည်
+    const today = getTodayDate();
+
+    // 🌟 ပြင်ဆင်ချက် (၂) - Database ရဲ့ NOW() အစား Node.js မှ မြန်မာစံတော်ချိန်ကို အတိအကျ တွက်ထုတ်မည်
+    const d = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Yangon" }));
+    const current_myanmar_time = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
 
     const clean_qr_text = qr_text.trim(); 
     const qrParts = clean_qr_text.split('_'); 
@@ -328,7 +334,6 @@ app.post('/api/check-in', (req, res) => {
         return res.json({ success: false, errorType: 'NOT_FOUND', message: "ဤ QR Code သည် သက်တမ်းကုန်သွားပါပြီ (သို့) ရက်စွဲ မမှန်ကန်ပါ။" });
     }
 
-    // 🌟 ပြင်ဆင်ချက်: 'settings' အစား 'system_settings' ဟု ပြောင်းလိုက်ပါပြီ
     db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'qr_checkin_open_minutes'", (err, setRes) => {
         
         let earlyLimit = 30; // Default (၃၀ မိနစ်)
@@ -336,15 +341,16 @@ app.post('/api/check-in', (req, res) => {
             earlyLimit = parseInt(setRes[0].setting_value);
         }
 
-        // 🌟 ပြင်ဆင်ချက်: id အစား Appointment_id ဟု ပြောင်းလိုက်ပါပြီ
+        // 🌟 ပြင်ဆင်ချက် (၃) - SQL ထဲက NOW() နေရာမှာ Node.js ကရလာတဲ့ မြန်မာအချိန် (?) ကို အစားထိုးပါမည်
         const checkSql = `
             SELECT Appointment_id, 
-                   TIMESTAMPDIFF(MINUTE, NOW(), CONCAT(appointment_date, ' ', appointment_time)) AS mins_left
+                   TIMESTAMPDIFF(MINUTE, ?, CONCAT(appointment_date, ' ', appointment_time)) AS mins_left
             FROM appointments 
             WHERE patient_uid = ? AND doctor_code = ? AND appointment_date = ? AND status = 'waiting'
         `;
         
-        db.query(checkSql, [uid, qrParts[1], today], (err, result) => {
+        // 🌟 Array ရဲ့ ပထမဆုံးမှာ current_myanmar_time ကို ထည့်ပို့မည်
+        db.query(checkSql, [current_myanmar_time, uid, qrParts[1], today], (err, result) => {
             if (err) {
                 console.error("Check-in Check Error:", err);
                 return res.json({ success: false, errorType: 'NOT_FOUND', message: "Database Error" });
