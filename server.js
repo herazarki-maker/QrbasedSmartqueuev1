@@ -416,13 +416,14 @@ app.get("/api/patient-history/:uid", (req, res) => {
 app.get('/api/assistant/queue/:doctor_code', (req, res) => {
     const doctor_code = req.params.doctor_code;
     
-    // 💡 patients Table နှင့် JOIN လုပ်ပြီး လူနာနာမည် (name) ကိုပါ ဆွဲထုတ်မည်
     const sql = `
         SELECT a.*, p.name AS patient_name 
         FROM appointments a
         LEFT JOIN patients p ON a.patient_uid = p.uid
         WHERE a.doctor_code = ? AND a.appointment_date = CURDATE()
-        ORDER BY a.token_number ASC
+        ORDER BY 
+            CASE WHEN a.status = 'skipped' THEN 1 ELSE 0 END, 
+            a.token_number ASC
     `;
 
     db.query(sql, [doctor_code], (err, results) => {
@@ -431,16 +432,39 @@ app.get('/api/assistant/queue/:doctor_code', (req, res) => {
     });
 });
 
+// 🌟 Assistant ဘက်မှ ရက်စွဲရွေး၍ တန်းစီစာရင်း လှမ်းကြည့်မည့် API
+app.get('/api/assistant/view-queue/:doctor_code/:date', (req, res) => {
+    const { doctor_code, date } = req.params;
+
+    const sql = `
+        SELECT a.*, p.name AS patient_name 
+        FROM appointments a
+        LEFT JOIN patients p ON a.patient_uid = p.uid
+        WHERE a.doctor_code = ? AND a.appointment_date = ?
+        ORDER BY 
+            CASE WHEN a.status = 'skipped' THEN 1 ELSE 0 END,
+            a.token_number ASC
+    `;
+
+    db.query(sql, [doctor_code, date], (err, results) => {
+        if (err) return res.json({ success: false, message: "Database Error" });
+        res.json({ success: true, appointments: results });
+    });
+});
+
 // ==========================================
 // Assistant Skip & Complete APIs
 // ==========================================
 app.post("/api/assistant/skip", (req, res) => {
     const { appointment_id } = req.body;
-    const sql = "UPDATE appointments SET queue_time = CURRENT_TIMESTAMP WHERE Appointment_id = ?";
+    
+    // 🌟 အချိန်ကို မပြောင်းတော့ဘဲ status ကို 'skipped' လို့ တိုက်ရိုက် ပြောင်းလိုက်ပါမည်
+    const sql = "UPDATE appointments SET status = 'skipped' WHERE Appointment_id = ?";
+    
     db.query(sql, [appointment_id], (err, result) => {
         if (err) return res.json({ success: false });
         io.emit("update_queue"); 
-        res.json({ success: true, message: "Skip လုပ်ပြီးပါပြီ။" });
+        res.json({ success: true, message: "Skip လုပ်ပြီး နောက်ဆုံးသို့ ပို့လိုက်ပါပြီ။" });
     });
 });
 // ==========================================
@@ -491,30 +515,39 @@ app.post("/api/settings/update", (req, res) => {
 // ==========================================
 app.get("/api/current-token/:docCode", (req, res) => {
     const docCode = req.params.docCode;
-    
-    // 💡 Queue မစရသေးရင် (Assistant က Start Queue မနှိပ်ရသေးရင်) မပြပါ
-    if (!activeQueues[docCode]) {
-        return res.json({ success: true, current_token: "မစသေးပါ" });
-    }
-
-    // 🌟 Date ပြဿနာ မတက်အောင် getTodayDate() ကို သုံးပါမည်
     const exactToday = getTodayDate(); 
 
-    // 🌟 အခန်းထဲရောက်နေသူ (consulting) ကို ပထမဦးစားပေးရှာမည်။ မရှိလျှင် နောက်ဝင်မည့်သူ (arrived) ကို ရှာမည်။
+    // 🌟 အခန်းထဲရောက်နေသူ (consulting) ရှိ/မရှိ နဲ့ ပြီးသွားသူ (completed) ရှိ/မရှိ ကိုပါ ရှာမည်
     const sql = `
-        SELECT token_number FROM appointments 
-        WHERE doctor_code = ? AND appointment_date = ? AND status IN ('consulting', 'arrived', 'waiting')
-        ORDER BY 
-            FIELD(status, 'consulting', 'arrived', 'waiting'), 
-            token_number ASC 
+        SELECT status, token_number FROM appointments 
+        WHERE doctor_code = ? AND appointment_date = ? AND status IN ('consulting', 'completed')
+        ORDER BY FIELD(status, 'consulting', 'completed'), Appointment_id DESC 
         LIMIT 1
     `;
     
-    db.query(sql, [docCode, exactToday], (err, result) => {
-        if (err || result.length === 0) {
-            return res.json({ success: false, current_token: "-" });
+    db.query(sql, [docCode, exactToday], (err, results) => {
+        if (err) return res.json({ success: false, current_token: "-" });
+
+        // (၁) လောလောဆယ် အခန်းထဲမှာ ပြနေတဲ့သူ (consulting) ရှိရင် အဲ့ဒီ Token ကို ပြမည်
+        if (results.length > 0 && results[0].status === 'consulting') {
+            activeQueues[docCode] = true; // Server အိပ်သွားရင်တောင် Memory ပြန်မှတ်ပေးမည်
+            return res.json({ success: true, current_token: results[0].token_number });
         }
-        res.json({ success: true, current_token: result[0].token_number });
+
+        // (၂) ပြနေတဲ့သူ မရှိဘူး၊ ဒါပေမယ့် ပြီးသွားတဲ့သူ (completed) တော့ရှိတယ် ဆိုရင် 
+        // 💡 (Assistant က Complete နှိပ်ပြီး Call Next မနှိပ်ရသေးတဲ့ ကြားကာလ)
+        if (results.length > 0 && results[0].status === 'completed') {
+            activeQueues[docCode] = true;
+            return res.json({ success: true, current_token: "နောက်လူနာခေါ်နေပါသည်" });
+        }
+
+        // (၃) DB ထဲမှာ ဘာမှမရှိသေးဘူး၊ ဒါပေမယ့် Assistant က Start Queue ခလုတ်ကို နှိပ်ထားပြီးပြီဆိုရင်
+        if (activeQueues[docCode]) {
+            return res.json({ success: true, current_token: "နောက်လူနာခေါ်နေပါသည်" });
+        }
+
+        // (၄) ဘာမှလည်း မရှိ၊ Assistant လည်း မစရသေးရင်တော့ မှန်ကန်စွာ Not Started ပြမည်
+        return res.json({ success: true, current_token: "Not Started" });
     });
 });
 
@@ -1020,27 +1053,6 @@ app.get("/api/patient/status/:uid", (req, res) => {
     });
 }, 60000); // 60000 ms = 1 Minute*/
 
-// 🌟 Assistant ဘက်မှ ရက်စွဲရွေး၍ တန်းစီစာရင်း လှမ်းကြည့်မည့် API
-app.get('/api/assistant/view-queue/:doctor_code/:date', (req, res) => {
-    const { doctor_code, date } = req.params;
-
-    // 💡 patients Table နှင့် JOIN လုပ်ပြီး လူနာနာမည် (name) ကိုပါ ဆွဲထုတ်မည်
-    const sql = `
-        SELECT a.*, p.name AS patient_name 
-        FROM appointments a
-        LEFT JOIN patients p ON a.patient_uid = p.uid
-        WHERE a.doctor_code = ? AND a.appointment_date = ?
-        ORDER BY a.token_number ASC
-    `;
-
-    db.query(sql, [doctor_code, date], (err, results) => {
-        if (err) {
-            console.error("View Queue Error:", err);
-            return res.json({ success: false, message: "Database Error" });
-        }
-        res.json({ success: true, appointments: results });
-    });
-});
 // 🌟 လူနာတစ်ဦးတွင် လက်ရှိ 'waiting' ဖြစ်နေသော Booking ရှိမရှိ စစ်ဆေးမည့် API
 app.get('/api/patient/active-booking/:uid', (req, res) => {
     const uid = req.params.uid;
