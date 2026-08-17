@@ -94,36 +94,6 @@
 
 
     <script>
-        // ဥပမာ - မင်းရဲ့ Booking Button ID က 'bookBtn' ဆိုပါစို့
-const bookBtn = document.getElementById('bookBtn');
-
-bookBtn.addEventListener('click', function(e) {
-    e.preventDefault();
-
-    // ၁။ ချက်ချင်း ခလုတ်ကို ပိတ်လိုက်မယ် (Double-click နှိပ်လို့မရအောင်)
-    bookBtn.disabled = true;
-    
-    // ၂။ ခလုတ်က စာသားကို Processing ပြောင်းပြမယ် (User ကို စောင့်ခိုင်းတဲ့ သဘောပါ)
-    bookBtn.innerText = "ခဏစောင့်ပါ..."; 
-
-    // ၃။ Backend ကို Data လှမ်းပို့မယ့် မင်းရဲ့ မူလ Code များ ...
-    fetch('/api/book-appointment', {
-        method: 'POST',
-        // ... မင်းရဲ့ code တွေ ...
-    })
-    .then(response => response.json())
-    .then(data => {
-        alert("Booking အောင်မြင်ပါသည်!");
-        // Page ကို Auto-update ဖြစ်အောင် ရေးထားရင် ရေး၊ မရေးထားရင် location.reload(); သုံးပါ
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        
-        // 🚨 အရေးကြီး: Error တက်သွားရင်တော့ နောက်တစ်ခါ ပြန်နှိပ်လို့ရအောင် ခလုတ်ကို ပြန်ဖွင့်ပေးရပါမယ်
-        bookBtn.disabled = false;
-        bookBtn.innerText = "Booking တင်မည်";
-    });
-});
        // Browser တွင် မှတ်ထားသော UID ကို ဆွဲယူပြီး Input Box တွင် အလိုအလျောက် ဖြည့်ပေးမည်
 const currentUID = localStorage.getItem("loggedInUID");
 
@@ -256,12 +226,11 @@ if (currentUID) {
                 dateInput.value = ""; // မှားရွေးထားသော ရက်စွဲကို ပြန်ဖျက်ပစ်မည်
             }
         }
-       // Confirm နှိပ်ပါက Backend သို့ Booking တင်မည်
+      // Confirm နှိပ်ပါက Backend သို့ Booking တင်မည်
         async function generateToken() {
             const specValue = document.getElementById("specialtySelect").value;
             const selectedDocCode = document.getElementById("doctorSelect").value;
             const pUid = document.getElementById("patientUID").value;
-            // 🌟 ရွေးထားသော ရက်စွဲကိုပါ လှမ်းယူမည်
             const selectedDate = document.getElementById("appointmentDate").value; 
             
             if (!specValue || !selectedDocCode || !selectedDate) {
@@ -269,45 +238,68 @@ if (currentUID) {
                 return;
             }
 
-            // Backend သို့ Data ပို့ခြင်း
-            const response = await fetch("/api/book-appointment", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    uid: pUid, // 💡 Backend ကတောင်းမည့် နာမည်အတိုင်း (uid) လို့ သုံးထားသည်
-                    doctor_code: selectedDocCode,
-                    date: selectedDate // 🌟 ရက်စွဲကိုပါ Server ဆီ ထည့်ပို့လိုက်ပြီ!
-                })
-            });
+            // 🌟 ခလုတ်ကို ရှာပြီး Double-click မဖြစ်အောင် ခဏ ပိတ်လိုက်မည်
+            const btn = document.querySelector(".confirm-btn");
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = "ခဏစောင့်ပါ...";
+            }
 
-            const result = await response.json();
-if (result.success) {
-                document.getElementById("finalToken").innerText = result.token || "✅";
-                
-                const docSelect = document.getElementById("doctorSelect");
-                const docName = docSelect.options[docSelect.selectedIndex].text;
-                document.getElementById("successDocName").innerText = docName;
-                
-                document.getElementById("successDate").innerText = selectedDate;
-                const docDetails = currentDoctorsList.find(d => d.id === selectedDocCode || d.doctor_code === selectedDocCode);
-                document.getElementById("successRoom").innerText = docDetails ? (docDetails.room_number || "မသတ်မှတ်ရသေးပါ") : "မသတ်မှတ်ရသေးပါ";
-                // 🌟 Modal တွင်လည်း အချိန်ကို သေချာအောင် လှမ်းခေါ်မည်
-                try {
-                    const setRes = await fetch("/api/settings");
-                    const setData = await setRes.json();
-                    if (setData.success && setData.settings && setData.settings.open_time) {
-                        document.getElementById("successTime").innerText = setData.settings.open_time + " နာရီမှ စတင်ပါမည်";
-                    } else {
+            try {
+                // Backend သို့ Data ပို့ခြင်း
+                const response = await fetch("/api/book-appointment", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        uid: pUid,
+                        doctor_code: selectedDocCode,
+                        date: selectedDate
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById("finalToken").innerText = result.token || "✅";
+                    
+                    const docSelect = document.getElementById("doctorSelect");
+                    const docName = docSelect.options[docSelect.selectedIndex].text;
+                    document.getElementById("successDocName").innerText = docName;
+                    
+                    document.getElementById("successDate").innerText = selectedDate;
+                    const docDetails = currentDoctorsList.find(d => d.id === selectedDocCode || d.doctor_code === selectedDocCode);
+                    document.getElementById("successRoom").innerText = docDetails ? (docDetails.room_number || "မသတ်မှတ်ရသေးပါ") : "မသတ်မှတ်ရသေးပါ";
+                    
+                    try {
+                        const setRes = await fetch("/api/settings");
+                        const setData = await setRes.json();
+                        if (setData.success && setData.settings && setData.settings.open_time) {
+                            document.getElementById("successTime").innerText = setData.settings.open_time + " နာရီမှ စတင်ပါမည်";
+                        } else {
+                            document.getElementById("successTime").innerText = "10:00 နာရီမှ စတင်ပါမည်";
+                        }
+                    } catch(e) {
                         document.getElementById("successTime").innerText = "10:00 နာရီမှ စတင်ပါမည်";
                     }
-                } catch(e) {
-                    document.getElementById("successTime").innerText = "10:00 နာရီမှ စတင်ပါမည်";
-                }
 
-                document.getElementById("tokenModal").classList.remove("hidden");
-                document.getElementById("tokenModal").style.display = "flex";
-            } else {
-                alert(result.message);
+                    document.getElementById("tokenModal").classList.remove("hidden");
+                    document.getElementById("tokenModal").style.display = "flex";
+                } else {
+                    alert(result.message);
+                    // 🚨 မအောင်မြင်ပါက ခလုတ်ကို ပြန်ဖွင့်ပေးမည်
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerText = "Confirm Booking";
+                    }
+                }
+            } catch (error) {
+                console.error("Booking Error:", error);
+                alert("ဆာဗာနှင့် ချိတ်ဆက်ရာတွင် အမှားအယွင်းရှိပါသည်");
+                // 🚨 Error တက်ပါက ခလုတ်ကို ပြန်ဖွင့်ပေးမည်
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = "Confirm Booking";
+                }
             }
         }
        
