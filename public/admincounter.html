@@ -91,13 +91,20 @@
         </div>
 
     </div>
-
+    <script src="/socket.io/socket.io.js"></script>
    <script>
         function logout() { 
             localStorage.clear();
             window.location.href = "/"; 
 
         }
+        const socket = io(); 
+
+        // 🌟 (၃) Admin ကဖျက်တာဖြစ်ဖြစ်၊ Counter က လူနာအသစ်သွင်းတာဖြစ်ဖြစ် Refresh မလိုဘဲ Update လုပ်ခိုင်းမည့်အပိုင်း
+        socket.on("update_patient_list", () => {
+            loadPatientData(); // စာရင်းဇယားနှင့် Total အရေအတွက်များကို ချက်ချင်း အသစ်ပြန်ခေါ်မည်
+        });
+
         function openModal(modalId) { document.getElementById(modalId).style.display = "flex"; }
         function closeModal(modalId) { document.getElementById(modalId).style.display = "none"; }
 

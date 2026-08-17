@@ -166,6 +166,7 @@ app.post("/create-patient", (req, res) => {
                     console.error("Insert Patient Error:", err);
                     return res.json({ success: false, message: "လူနာအချက်အလက် သိမ်းဆည်း၍ မရပါ။" });
                 }
+                io.emit("update_patient_list");
                 return res.json({ success: true, message: "Account ဖန်တီးမှု အောင်မြင်ပါသည်။", uid: newUid });
             });
         });
@@ -1142,6 +1143,7 @@ app.delete("/api/admin/patient/:uid", (req, res) => {
                 console.error("Error deleting patient:", err);
                 return res.json({ success: false, message: "Database Error ကြောင့် လူနာအကောင့်ကို ဖျက်၍မရပါ။" });
             }
+            io.emit("update_patient_list");
             res.json({ success: true, message: "လူနာအကောင့်ကို အပြီးတိုင် ဖျက်သိမ်းလိုက်ပါပြီ။ ✅" });
         });
     });

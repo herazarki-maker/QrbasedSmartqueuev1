@@ -384,14 +384,20 @@
             </div>
         </div>
     </div>
-
+<script src="/socket.io/socket.io.js"></script>
     <script>
         function logout() {
             localStorage.clear();
             window.location.href = "/";
         }
+   const socket = io(); 
 
-        function switchTab(tabId, element) {
+        // 🌟 (၃) လူနာအသစ်သွင်း/ဖျက် လိုက်တာနဲ့ Refresh မလိုဘဲ Update လုပ်ခိုင်းမည့်အပိုင်း
+        socket.on("update_patient_list", () => {
+            loadCompliancePatients(); // လူနာစာရင်း ဇယားကို ချက်ချင်း အသစ်ပြန်ခေါ်မည်
+            loadDashboardStats(); // Dashboard ပေါ်က Total အရေအတွက်တွေကိုပါ အသစ်ပြန်ပြောင်းမည်
+        });
+          function switchTab(tabId, element) {
             const views = document.querySelectorAll('.view-section');
             views.forEach(view => view.classList.remove('active'));
 
