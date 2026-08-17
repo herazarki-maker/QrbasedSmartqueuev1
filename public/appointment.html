@@ -94,6 +94,36 @@
 
 
     <script>
+        // ဥပမာ - မင်းရဲ့ Booking Button ID က 'bookBtn' ဆိုပါစို့
+const bookBtn = document.getElementById('bookBtn');
+
+bookBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+
+    // ၁။ ချက်ချင်း ခလုတ်ကို ပိတ်လိုက်မယ် (Double-click နှိပ်လို့မရအောင်)
+    bookBtn.disabled = true;
+    
+    // ၂။ ခလုတ်က စာသားကို Processing ပြောင်းပြမယ် (User ကို စောင့်ခိုင်းတဲ့ သဘောပါ)
+    bookBtn.innerText = "ခဏစောင့်ပါ..."; 
+
+    // ၃။ Backend ကို Data လှမ်းပို့မယ့် မင်းရဲ့ မူလ Code များ ...
+    fetch('/api/book-appointment', {
+        method: 'POST',
+        // ... မင်းရဲ့ code တွေ ...
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert("Booking အောင်မြင်ပါသည်!");
+        // Page ကို Auto-update ဖြစ်အောင် ရေးထားရင် ရေး၊ မရေးထားရင် location.reload(); သုံးပါ
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        
+        // 🚨 အရေးကြီး: Error တက်သွားရင်တော့ နောက်တစ်ခါ ပြန်နှိပ်လို့ရအောင် ခလုတ်ကို ပြန်ဖွင့်ပေးရပါမယ်
+        bookBtn.disabled = false;
+        bookBtn.innerText = "Booking တင်မည်";
+    });
+});
        // Browser တွင် မှတ်ထားသော UID ကို ဆွဲယူပြီး Input Box တွင် အလိုအလျောက် ဖြည့်ပေးမည်
 const currentUID = localStorage.getItem("loggedInUID");
 
