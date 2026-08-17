@@ -1,4 +1,13 @@
-const db = require("./db");
+const db = mysql.createPool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT,
+    ssl: {
+        rejectUnauthorized: false // <--- ဒါလေး မဖြစ်မနေ ထည့်ပေးရပါမယ်
+    }
+});
 const express = require("express");
 const http = require('http');
 const { Server } = require("socket.io");
