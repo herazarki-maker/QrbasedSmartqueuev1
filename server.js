@@ -1,4 +1,4 @@
-const mysql = require('mysql12'); // (တကယ်လို့ မင်းက mysql2 သုံးထားရင် require('mysql2') လို့ ရေးပါ)
+const mysql = require('mysql2'); // (တကယ်လို့ မင်းက mysql2 သုံးထားရင် require('mysql2') လို့ ရေးပါ)
 require('dotenv').config();
 
 const db = mysql.createPool({
