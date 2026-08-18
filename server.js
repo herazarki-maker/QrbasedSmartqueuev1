@@ -42,6 +42,33 @@ function getTodayDate() {
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`; // "2026-08-16" အတိအကျ ထွက်ပါမည်
 }
+// 🌟 (အသစ်) ဆေးခန်းပိတ်ချိန် ရောက်/မရောက် စစ်ဆေးပေးမည့် Function
+function isClinicClosed(closeTimeStr) {
+    if (!closeTimeStr) return false;
+    
+    // မြန်မာစံတော်ချိန်ကို ယူမည်
+    const d = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Yangon" }));
+    const currentHour = d.getHours(); 
+    const currentMin = d.getMinutes(); 
+    
+    // Database ထဲက အချိန် (ဥပမာ "17:30") ကို နာရီ နဲ့ မိနစ် ခွဲထုတ်မည်
+    const timeParts = closeTimeStr.split(':');
+    if (timeParts.length < 2) return false;
+    
+    let closeHour = parseInt(timeParts[0].trim(), 10);
+    const closeMin = parseInt(timeParts[1].trim(), 10);
+    
+    // ညနေပိုင်း PM တွေပါလာရင် 24 Hour Format ပြောင်းပေးရန်
+    const timeStrLower = closeTimeStr.toLowerCase();
+    if (timeStrLower.includes('pm') && closeHour < 12) closeHour += 12;
+    if (timeStrLower.includes('am') && closeHour === 12) closeHour = 0;
+    
+    // ပိတ်ချိန် နာရီထက် ကျော်သွားရင် (သို့) နာရီတူပြီး မိနစ်ကျော်သွားရင် True (ပိတ်ပြီ) လို့ သတ်မှတ်မည်
+    if (currentHour > closeHour) return true;
+    if (currentHour === closeHour && currentMin >= closeMin) return true;
+    
+    return false;
+}
 // ==========================================
 // User Login API 
 // ==========================================
@@ -229,10 +256,10 @@ app.get("/api/doctors/:specialty", (req, res) => {
         res.json({ success: true, doctors: results });
     });
 });
-// 🌟 (အသစ်) RACE CONDITION ကာကွယ်ရန် UID များကို ခဏ သော့ခတ်ထားမည့် နေရာ
+// 🌟 RACE CONDITION ကာကွယ်ရန် UID များကို ခဏ သော့ခတ်ထားမည့် နေရာ
 const bookingLocks = new Set();
 
-// 🌟 လူနာ (သို့) Assistant ဘက်မှ Booking တင်မည့် API (Token နှင့် အချိန်ပါ တွက်ထုတ်ပေးမည်)
+// 🌟 လူနာ (သို့) Assistant ဘက်မှ Booking တင်မည့် API
 app.post('/api/book-appointment', (req, res) => {
     const { uid, doctor_code, date } = req.body; 
 
@@ -240,70 +267,77 @@ app.post('/api/book-appointment', (req, res) => {
         return res.json({ success: false, message: "အချက်အလက် မပြည့်စုံပါ။ ရက်စွဲ ရွေးချယ်ရန် လိုအပ်ပါသည်။" });
     }
 
-    // 🚨 ပြဿနာဖြေရှင်းခြင်း (Lock စစ်ဆေးမည်) 
-    // ဒီ UID က Booking လုပ်နေဆဲ Process မပြီးသေးဘူးဆိုရင် နောက်ထပ် Request တွေကို လုံးဝ လက်မခံပါ
     if (bookingLocks.has(uid)) {
         return res.json({ success: false, message: "စနစ်က အလုပ်လုပ်နေဆဲဖြစ်ပါသည်။ ခဏစောင့်ပြီးမှ ပြန်ကြိုးစားပါ။" });
     }
 
-    // Process စပြီဖြစ်လို့ ဒီ UID ကို Lock ချလိုက်ပါမည်
     bookingLocks.add(uid);
 
-    // 💡 အောက်က အဆင့်တွေပြီးသွားရင် သို့မဟုတ် Error တက်သွားရင် Lock ပြန်ဖွင့်ပေးမယ့် Function
     const sendResponse = (data) => {
-        bookingLocks.delete(uid); // Lock ပြန်ဖွင့်ပေးမည်
+        bookingLocks.delete(uid); 
         return res.json(data);
     };
 
-    const checkLimitSql = "SELECT COUNT(*) as total_booked FROM appointments WHERE patient_uid = ? AND appointment_date = ?";
-    
-    db.query(checkLimitSql, [uid, date], (err, limitRes) => {
-        if (err) return sendResponse({ success: false, message: "Database Error" });
-
-        // Booking ၃ ကြိမ်နှင့်အထက် ရှိနေပါက ထပ်တင်ခွင့် လုံးဝ မပေးတော့ပါ ❌
-        if (limitRes[0].total_booked >= 3) {
-            return sendResponse({ 
-                success: false, 
-                message: "⚠️ သင်သည် ယနေ့အတွက် Booking တင်ခွင့် အကြိမ်ရေ (၃) ကြိမ် ပြည့်သွားပါပြီ။\n(ထပ်မံတင်လိုပါက မနက်ဖြန်မှ ပြန်လည်ကြိုးစားပါ။)" 
-            });
+    // 🌟 ၁။ ဆေးခန်းပိတ်/မပိတ် အရင်စစ်မည်
+    db.query("SELECT close_time FROM clinic_settings WHERE id = 1", (err, setRes) => {
+        let clinicCloseTime = '17:00'; // Default ညနေ ၅ နာရီ
+        if (!err && setRes.length > 0 && setRes[0].close_time) {
+            clinicCloseTime = setRes[0].close_time;
         }
 
-        const checkSql = "SELECT Appointment_id FROM appointments WHERE patient_uid = ? AND appointment_date = ? AND status = 'waiting'";
+        const exactToday = getTodayDate();
+        // ယနေ့အတွက် Booking တင်တာဖြစ်ပြီး၊ ဆေးခန်းလည်း ပိတ်သွားပြီဆိုရင် လက်မခံပါ
+        if (date === exactToday && isClinicClosed(clinicCloseTime)) {
+            return sendResponse({ success: false, message: "⚠️ တောင်းပန်ပါသည်။ ယနေ့အတွက် ဆေးခန်းပိတ်သွားပြီဖြစ်၍ Booking ထပ်တင်ခွင့်မရှိတော့ပါ။ မနက်ဖြန်အတွက်သာ ရက်စွဲရွေးချယ်ပြီး တင်ပေးပါ။" });
+        }
+
+        // ၂။ မူလ Booking အကြိမ်ရေ စစ်ဆေးမည့်အပိုင်း ဆက်လုပ်မည်
+        const checkLimitSql = "SELECT COUNT(*) as total_booked FROM appointments WHERE patient_uid = ? AND appointment_date = ?";
         
-        db.query(checkSql, [uid, date], (err, results) => {
+        db.query(checkLimitSql, [uid, date], (err, limitRes) => {
             if (err) return sendResponse({ success: false, message: "Database Error" });
 
-            if (results.length > 0) {
-                return sendResponse({ success: false, message: "ရွေးချယ်ထားသော ရက်စွဲအတွက် လူကြီးမင်း၏ Booking ရှိနှင့်ပြီး ဖြစ်ပါသည်။" });
+            if (limitRes[0].total_booked >= 3) {
+                return sendResponse({ 
+                    success: false, 
+                    message: "⚠️ သင်သည် ယနေ့အတွက် Booking တင်ခွင့် အကြိမ်ရေ (၃) ကြိမ် ပြည့်သွားပါပြီ။\n(ထပ်မံတင်လိုပါက မနက်ဖြန်မှ ပြန်လည်ကြိုးစားပါ။)" 
+                });
             }
 
-            const countSql = "SELECT COUNT(*) as count FROM appointments WHERE doctor_code = ? AND appointment_date = ?";
+            const checkSql = "SELECT Appointment_id FROM appointments WHERE patient_uid = ? AND appointment_date = ? AND status = 'waiting'";
             
-            db.query(countSql, [doctor_code, date], (err, countResult) => {
-                if (err) return sendResponse({ success: false, message: "Token တွက်ချက်ရာတွင် အမှားဖြစ်နေပါသည်။" });
+            db.query(checkSql, [uid, date], (err, results) => {
+                if (err) return sendResponse({ success: false, message: "Database Error" });
 
-                const nextNumber = countResult[0].count + 1;
-                const tokenString = doctor_code + nextNumber.toString().padStart(3, '0');
+                if (results.length > 0) {
+                    return sendResponse({ success: false, message: "ရွေးချယ်ထားသော ရက်စွဲအတွက် လူကြီးမင်း၏ Booking ရှိနှင့်ပြီး ဖြစ်ပါသည်။" });
+                }
 
-                // 🌟 (၁) Admin သတ်မှတ်ထားသော ဆေးခန်းဖွင့်ချိန်ကို clinic_settings မှ အရင်လှမ်းယူမည်
-                db.query("SELECT open_time FROM clinic_settings WHERE id = 1", (err, timeRes) => {
-                    
-                    let clinicStartTime = '10:00:00'; // Default
-                    if (timeRes && timeRes.length > 0 && timeRes[0].open_time) {
-                        clinicStartTime = timeRes[0].open_time; // Admin ပြင်ထားတဲ့ အချိန်ကို ယူမည်
-                    }
+                const countSql = "SELECT COUNT(*) as count FROM appointments WHERE doctor_code = ? AND appointment_date = ?";
+                
+                db.query(countSql, [doctor_code, date], (err, countResult) => {
+                    if (err) return sendResponse({ success: false, message: "Token တွက်ချက်ရာတွင် အမှားဖြစ်နေပါသည်။" });
 
-                    // 🌟 (၂) ထိုအချိန်ကို appointment_time ကော်လံထဲသို့ အတိအကျ ထည့်သွင်းသိမ်းဆည်းမည်
-                    const insertSql = "INSERT INTO appointments (patient_uid, doctor_code, appointment_date, appointment_time, status, token_number) VALUES (?, ?, ?, ?, 'waiting', ?)";
-                    
-                    db.query(insertSql, [uid, doctor_code, date, clinicStartTime, tokenString], (err) => {
-                        if (err) {
-                            console.error("Booking Insert Error:", err);
-                            return sendResponse({ success: false, message: "Booking တင်၍ မရပါ။" });
+                    const nextNumber = countResult[0].count + 1;
+                    const tokenString = doctor_code + nextNumber.toString().padStart(3, '0');
+
+                    db.query("SELECT open_time FROM clinic_settings WHERE id = 1", (err, timeRes) => {
+                        let clinicStartTime = '10:00:00'; 
+                        if (timeRes && timeRes.length > 0 && timeRes[0].open_time) {
+                            clinicStartTime = timeRes[0].open_time; 
                         }
 
-                        io.emit("update_queue");
-                        sendResponse({ success: true, message: "Booking ကို အောင်မြင်စွာ တင်ပြီးပါပြီ။", token: tokenString });
+                        const insertSql = "INSERT INTO appointments (patient_uid, doctor_code, appointment_date, appointment_time, status, token_number) VALUES (?, ?, ?, ?, 'waiting', ?)";
+                        
+                        db.query(insertSql, [uid, doctor_code, date, clinicStartTime, tokenString], (err) => {
+                            if (err) {
+                                console.error("Booking Insert Error:", err);
+                                return sendResponse({ success: false, message: "Booking တင်၍ မရပါ။" });
+                            }
+
+                            io.emit("update_queue");
+                            sendResponse({ success: true, message: "Booking ကို အောင်မြင်စွာ တင်ပြီးပါပြီ။", token: tokenString });
+                        });
                     });
                 });
             });
@@ -335,7 +369,6 @@ app.get("/api/patient-profile/:uid", (req, res) => {
 app.post('/api/check-in', (req, res) => {
     const { uid, qr_text } = req.body;
 
-    // 🌟 Server Timezone အမှားကို ကျော်လွှားရန် Node.js မှ မြန်မာအချိန်ကို အတိအကျ တွက်ထုတ်မည်
     const d = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Yangon" }));
     const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const current_myanmar_time = `${today} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
@@ -343,65 +376,71 @@ app.post('/api/check-in', (req, res) => {
     const clean_qr_text = qr_text.trim(); 
     const qrParts = clean_qr_text.split('_'); 
     
-    // (၁) QR ပုံစံ မှားနေလျှင် အနီရောင် Box ပြရန်
     if (qrParts.length !== 3 || qrParts[0] !== 'QR') {
         return res.json({ success: false, errorType: 'NOT_FOUND', message: "QR Code ပုံစံ မမှန်ကန်ပါ။" });
     }
 
-    // (၂) သက်တမ်းကုန်/ရက်စွဲမှားလျှင် အနီရောင် Box ပြရန်
     if (qrParts[2] !== today) {
         return res.json({ success: false, errorType: 'NOT_FOUND', message: "ဤ QR Code သည် သက်တမ်းကုန်သွားပါပြီ (သို့) ရက်စွဲ မမှန်ကန်ပါ။" });
     }
 
-    db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'qr_checkin_open_minutes'", (err, setRes) => {
-        let earlyLimit = 30; // Default (၃၀ မိနစ်)
-        if (setRes && setRes.length > 0) earlyLimit = parseInt(setRes[0].setting_value);
+    // 🌟 (အသစ်) ဆေးခန်းပိတ်သွားခြင်း ရှိ/မရှိ အရင်စစ်မည်
+    db.query("SELECT close_time FROM clinic_settings WHERE id = 1", (err, closeRes) => {
+        let clinicCloseTime = '17:00'; 
+        if (!err && closeRes.length > 0 && closeRes[0].close_time) {
+            clinicCloseTime = closeRes[0].close_time;
+        }
 
-        // 🌟 ဤနေရာတွင် NOW() အစား Node.js မှရသော current_myanmar_time (?) ကို အသုံးပြုထားပါသည်
-        const checkSql = `
-            SELECT Appointment_id, 
-                   TIMESTAMPDIFF(MINUTE, ?, CONCAT(appointment_date, ' ', appointment_time)) AS mins_left
-            FROM appointments 
-            WHERE patient_uid = ? AND doctor_code = ? AND appointment_date = ? AND status = 'waiting'
-        `;
-        
-        // 🌟 Array ၏ ပထမဆုံးတွင် current_myanmar_time ကို ထည့်ပို့ရပါမည်
-        db.query(checkSql, [current_myanmar_time, uid, qrParts[1], today], (err, result) => {
-            if (err) return res.json({ success: false, errorType: 'NOT_FOUND', message: "Database Error" });
+        if (isClinicClosed(clinicCloseTime)) {
+            return res.json({ success: false, errorType: 'CLOSED', message: "⚠️ ယနေ့အတွက် ဆေးခန်းပိတ်သွားပြီဖြစ်၍ Check-in ဝင်ခွင့်မပြုတော့ပါ။" });
+        }
 
-            // (၃) Booking မရှိလျှင် သို့ မှားယွင်းနေလျှင် အနီရောင် Box ပြရန်
-            if (result.length === 0) {
-                return res.json({ 
-                    success: false, 
-                    errorType: 'NOT_FOUND', 
-                    message: "လူကြီးမင်းသည် ဤဆရာဝန်ထံတွင် Booking မရှိပါ (သို့) မှားယွင်းသော အခန်းရှေ့သို့ ရောက်နေပါသည်။" 
-                });
-            }
+        // မူလရှိပြီးသား Check-in Process ဆက်လုပ်မည်
+        db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'qr_checkin_open_minutes'", (err, setRes) => {
+            let earlyLimit = 30; // Default (၃၀ မိနစ်)
+            if (setRes && setRes.length > 0) earlyLimit = parseInt(setRes[0].setting_value);
 
-            const minsLeft = result[0].mins_left;
+            const checkSql = `
+                SELECT Appointment_id, 
+                       TIMESTAMPDIFF(MINUTE, ?, CONCAT(appointment_date, ' ', appointment_time)) AS mins_left
+                FROM appointments 
+                WHERE patient_uid = ? AND doctor_code = ? AND appointment_date = ? AND status = 'waiting'
+            `;
+            
+            db.query(checkSql, [current_myanmar_time, uid, qrParts[1], today], (err, result) => {
+                if (err) return res.json({ success: false, errorType: 'NOT_FOUND', message: "Database Error" });
 
-            // (၄) အချိန်စောလွန်းနေလျှင် အဝါ/လိမ္မော်ရောင် Box ပြရန်
-            if (minsLeft > earlyLimit) {
-                return res.json({ 
-                    success: false, 
-                    errorType: 'TOO_EARLY', 
-                    message: `စောလွန်းနေပါသည်။ သင့် Booking အချိန်မတိုင်မီ ${earlyLimit} မိနစ်အလိုမှသာ Check-in ဝင်၍ ရပါမည်။` 
-                });
-            }
+                if (result.length === 0) {
+                    return res.json({ 
+                        success: false, 
+                        errorType: 'NOT_FOUND', 
+                        message: "လူကြီးမင်းသည် ဤဆရာဝန်ထံတွင် Booking မရှိပါ (သို့) မှားယွင်းသော အခန်းရှေ့သို့ ရောက်နေပါသည်။" 
+                    });
+                }
 
-            // အချိန်ကိုက်ရောက်လာပါက Check-in (arrived) အဖြစ် ပြောင်းမည်
-            const updateSql = "UPDATE appointments SET status = 'arrived' WHERE Appointment_id = ?";
-            db.query(updateSql, [result[0].Appointment_id], (err) => {
-                if (err) return res.json({ success: false, errorType: 'NOT_FOUND', message: "Update Error" });
+                const minsLeft = result[0].mins_left;
 
-                io.emit("update_queue"); 
+                if (minsLeft > earlyLimit) {
+                    return res.json({ 
+                        success: false, 
+                        errorType: 'TOO_EARLY', 
+                        message: `စောလွန်းနေပါသည်။ သင့် Booking အချိန်မတိုင်မီ ${earlyLimit} မိနစ်အလိုမှသာ Check-in ဝင်၍ ရပါမည်။` 
+                    });
+                }
 
-                db.query("SELECT token_number FROM appointments WHERE Appointment_id = ?", [result[0].Appointment_id], (err, tokenResult) => {
-                    if (tokenResult.length > 0) {
-                        res.json({ success: true, message: "Check-in အောင်မြင်ပါသည်။", patient_token: tokenResult[0].token_number });
-                    } else {
-                        res.json({ success: false, errorType: 'NOT_FOUND', message: "Token အား ရှာမတွေ့ပါ။" });
-                    }
+                const updateSql = "UPDATE appointments SET status = 'arrived' WHERE Appointment_id = ?";
+                db.query(updateSql, [result[0].Appointment_id], (err) => {
+                    if (err) return res.json({ success: false, errorType: 'NOT_FOUND', message: "Update Error" });
+
+                    io.emit("update_queue"); 
+
+                    db.query("SELECT token_number FROM appointments WHERE Appointment_id = ?", [result[0].Appointment_id], (err, tokenResult) => {
+                        if (tokenResult.length > 0) {
+                            res.json({ success: true, message: "Check-in အောင်မြင်ပါသည်။", patient_token: tokenResult[0].token_number });
+                        } else {
+                            res.json({ success: false, errorType: 'NOT_FOUND', message: "Token အား ရှာမတွေ့ပါ။" });
+                        }
+                    });
                 });
             });
         });
@@ -747,11 +786,15 @@ app.post("/api/admin/settings", (req, res) => {
 });
 
 // ==========================================
-// Admin - Staff Management API
+// Admin - Staff Management API (ဆရာဝန်နာမည်ပါ ဆွဲထုတ်မည်)
 // ==========================================
 app.get("/api/admin/staff", (req, res) => {
-    // 🌟 staff_view အစား staff ဇယားအသစ်မှ တိုက်ရိုက်ဆွဲထုတ်မည်
-    const sql = `SELECT id, username AS name, role, status, phone FROM staff`;
+    // 🌟 LEFT JOIN သုံးပြီး ဆရာဝန်နာမည် (doctor_name) ကိုပါ တစ်ခါတည်း ဆွဲထုတ်မည်
+    const sql = `
+        SELECT s.id, s.username AS name, s.role, s.status, s.phone, d.name AS doctor_name 
+        FROM staff s
+        LEFT JOIN doctors d ON s.dr_id = d.dr_id
+    `;
     
     db.query(sql, (err, results) => {
         if (err) {

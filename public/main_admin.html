@@ -593,17 +593,28 @@
                             : `<span class="badge danger" style="background: #fecaca; color: #991b1b;">Inactive</span>`;
                         
                         let roleName = s.role ? s.role.toUpperCase() : 'STAFF';
+                        
+                        // 🌟 Assistant ဆိုလျှင် ဆရာဝန်နာမည်ကိုပါ Role အောက်တွင် ကပ်ပြမည်
+                        let roleDisplay = `<span style="font-weight: 500; color: #0284c7;">${roleName}</span>`;
+                        if (s.role === 'Doctor Assistant') {
+                            if (s.doctor_name) {
+                                roleDisplay += `<br><small style="color: #059669; font-weight: bold; margin-top: 5px; display: inline-block;">👨‍⚕️ ${s.doctor_name}</small>`;
+                            } else {
+                                roleDisplay += `<br><small style="color: #ef4444; margin-top: 5px; display: inline-block;">⚠️ မသတ်မှတ်ရသေးပါ</small>`;
+                            }
+                        }
 
                         const tr = document.createElement("tr");
-                        // 🚨 ဤနေရာတွင် p အစား s ကိုသာ သုံးထားပါသည်
                         tr.innerHTML = `
                             <td><strong>${s.name}</strong><br><small style="color:#64748b;">ID: ${s.id}</small></td>
-                            <td><span style="font-weight: 500; color: #0284c7;">${roleName}</span></td>
+                            <td>${roleDisplay}</td>
                             <td>${s.phone || '-'}</td>
                             <td>${badgeHtml}</td>
                             <td style="white-space: nowrap;">
                               <button class="action-btn unlock-btn" onclick="openStaffModal('edit', '${s.id}', '${s.role}', '${s.name}', '${s.status}', '${s.phone || ''}')"><i class="fas fa-edit"></i> Edit</button>
+                              
                               <button class="action-btn" style="background: #eab308; color: white; padding: 6px 12px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; margin-left: 5px; margin-right: 5px;" onclick="resetStaffPassword('${s.id}', '${s.name}')"><i class="fas fa-key"></i> Key</button>
+
                               <button class="action-btn lock-btn" onclick="deleteStaff('${s.id}', '${s.role}')"><i class="fas fa-trash"></i> Delete</button>
                             </td>
                         `;
