@@ -603,6 +603,7 @@
                             <td>${badgeHtml}</td>
                             <td style="white-space: nowrap;">
                               <button class="action-btn unlock-btn" onclick="openStaffModal('edit', '${s.id}', '${s.role}', '${s.name}', '${s.status}', '${s.phone || ''}')"><i class="fas fa-edit"></i> Edit</button>
+                              <button class="action-btn" style="background: #eab308; color: white; padding: 6px 12px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; margin-left: 5px; margin-right: 5px;" onclick="resetStaffPassword('${s.id}', '${s.name}')"><i class="fas fa-key"></i> Key</button>
                               <button class="action-btn lock-btn" onclick="deleteStaff('${s.id}', '${s.role}')"><i class="fas fa-trash"></i> Delete</button>
                             </td>
                         `;
@@ -1031,7 +1032,33 @@
         }
 
       
-
+    // 💡 Admin မှ Staff များ၏ Password ကို အလွယ်တကူ Reset ချပေးမည့် Function
+        async function resetStaffPassword(id, name) {
+            // Admin ကို Password အသစ်ရိုက်ထည့်ခိုင်းမည်
+            const newPass = prompt(`🔑 ဝန်ထမ်း (${name}) အတွက် Password အသစ် ရိုက်ထည့်ပါ :`);
+            
+            // Password ရိုက်ထည့်ခဲ့မှသာ ဆက်လုပ်မည်
+            if (newPass && newPass.trim() !== "") {
+                try {
+                    const response = await fetch("/api/admin/staff/reset-password", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: id, newPassword: newPass.trim() })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showSmartAlert(result.message, "success");
+                    } else {
+                        showSmartAlert(result.message, "error");
+                    }
+                } catch (error) {
+                    console.error("Password Reset Error:", error);
+                    showSmartAlert("Network Error ကြောင့် ပြောင်းလဲ၍မရပါ။", "error");
+                }
+            }
+        }
            
     </script>
 </body>

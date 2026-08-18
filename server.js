@@ -1178,3 +1178,22 @@ app.post("/api/assistant/no-show", (req, res) => {
         });
     });
 });
+// ==========================================
+// Admin - Staff Password ကို Reset ချပေးမည့် API
+// ==========================================
+app.post("/api/admin/staff/reset-password", (req, res) => {
+    const { id, newPassword } = req.body;
+    
+    if (!id || !newPassword) {
+        return res.json({ success: false, message: "Password အသစ် ရိုက်ထည့်ရန် လိုအပ်ပါသည်။" });
+    }
+
+    const sql = "UPDATE staff SET password = ? WHERE id = ?";
+    db.query(sql, [newPassword, id], (err) => {
+        if (err) {
+            console.error("Reset Password Error:", err);
+            return res.json({ success: false, message: "Database Error ကြောင့် ပြင်ဆင်၍မရပါ။" });
+        }
+        res.json({ success: true, message: "🔑 Password ကို အောင်မြင်စွာ ပြောင်းလဲပေးလိုက်ပါပြီ!" });
+    });
+});
