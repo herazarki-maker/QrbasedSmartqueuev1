@@ -838,9 +838,7 @@
                 if (result.success) {
                     showSmartAlert(result.message, "success");
                     // Alert ပေါ်ပြီး 1.5 စက္ကန့်အကြာမှ Page ကို Reload လုပ်မည်
-                    setTimeout(() => {
-                        window.location.reload(); 
-                    }, 1500);
+                   
                 } else {
                     // Backend မှ ဖျက်မရကြောင်း Error ပြန်လာလျှင်
                     showSmartAlert(result.message, "error");

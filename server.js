@@ -7,7 +7,7 @@ const db = mysql.createPool({
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
     port: process.env.DB_PORT,
-    timezone: '06:30',
+    timezone: '+06:30',
     ssl: {
         rejectUnauthorized: false // <--- ဒါလေး မဖြစ်မနေ ထည့်ပေးရပါမယ်
     }
@@ -314,13 +314,11 @@ app.get("/api/patient-profile/:uid", (req, res) => {
 // =================================================================
 app.post('/api/check-in', (req, res) => {
     const { uid, qr_text } = req.body;
-    
-    // 🌟 ပြင်ဆင်ချက် (၁) - Server Timezone ပြဿနာကို ကျော်လွှားရန် getTodayDate() ကို သုံးမည်
-    const today = getTodayDate();
 
-    // 🌟 ပြင်ဆင်ချက် (၂) - Database ရဲ့ NOW() အစား Node.js မှ မြန်မာစံတော်ချိန်ကို အတိအကျ တွက်ထုတ်မည်
+    // 🌟 Server Timezone အမှားကို ကျော်လွှားရန် Node.js မှ မြန်မာအချိန်ကို အတိအကျ တွက်ထုတ်မည်
     const d = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Yangon" }));
-    const current_myanmar_time = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const current_myanmar_time = `${today} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
 
     const clean_qr_text = qr_text.trim(); 
     const qrParts = clean_qr_text.split('_'); 
@@ -336,13 +334,10 @@ app.post('/api/check-in', (req, res) => {
     }
 
     db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'qr_checkin_open_minutes'", (err, setRes) => {
-        
         let earlyLimit = 30; // Default (၃၀ မိနစ်)
-        if (setRes && setRes.length > 0) {
-            earlyLimit = parseInt(setRes[0].setting_value);
-        }
+        if (setRes && setRes.length > 0) earlyLimit = parseInt(setRes[0].setting_value);
 
-        // 🌟 ပြင်ဆင်ချက် (၃) - SQL ထဲက NOW() နေရာမှာ Node.js ကရလာတဲ့ မြန်မာအချိန် (?) ကို အစားထိုးပါမည်
+        // 🌟 ဤနေရာတွင် NOW() အစား Node.js မှရသော current_myanmar_time (?) ကို အသုံးပြုထားပါသည်
         const checkSql = `
             SELECT Appointment_id, 
                    TIMESTAMPDIFF(MINUTE, ?, CONCAT(appointment_date, ' ', appointment_time)) AS mins_left
@@ -350,12 +345,9 @@ app.post('/api/check-in', (req, res) => {
             WHERE patient_uid = ? AND doctor_code = ? AND appointment_date = ? AND status = 'waiting'
         `;
         
-        // 🌟 Array ရဲ့ ပထမဆုံးမှာ current_myanmar_time ကို ထည့်ပို့မည်
+        // 🌟 Array ၏ ပထမဆုံးတွင် current_myanmar_time ကို ထည့်ပို့ရပါမည်
         db.query(checkSql, [current_myanmar_time, uid, qrParts[1], today], (err, result) => {
-            if (err) {
-                console.error("Check-in Check Error:", err);
-                return res.json({ success: false, errorType: 'NOT_FOUND', message: "Database Error" });
-            }
+            if (err) return res.json({ success: false, errorType: 'NOT_FOUND', message: "Database Error" });
 
             // (၃) Booking မရှိလျှင် သို့ မှားယွင်းနေလျှင် အနီရောင် Box ပြရန်
             if (result.length === 0) {
@@ -379,18 +371,14 @@ app.post('/api/check-in', (req, res) => {
 
             // အချိန်ကိုက်ရောက်လာပါက Check-in (arrived) အဖြစ် ပြောင်းမည်
             const updateSql = "UPDATE appointments SET status = 'arrived' WHERE Appointment_id = ?";
-            db.query(updateSql, [result[0].Appointment_id], (err, updateResult) => {
+            db.query(updateSql, [result[0].Appointment_id], (err) => {
                 if (err) return res.json({ success: false, errorType: 'NOT_FOUND', message: "Update Error" });
 
-                io.emit("update_queue"); // Assistant ဆီ သတင်းပို့မည်
+                io.emit("update_queue"); 
 
                 db.query("SELECT token_number FROM appointments WHERE Appointment_id = ?", [result[0].Appointment_id], (err, tokenResult) => {
                     if (tokenResult.length > 0) {
-                        res.json({ 
-                            success: true, 
-                            message: "Check-in အောင်မြင်ပါသည်။", 
-                            patient_token: tokenResult[0].token_number 
-                        });
+                        res.json({ success: true, message: "Check-in အောင်မြင်ပါသည်။", patient_token: tokenResult[0].token_number });
                     } else {
                         res.json({ success: false, errorType: 'NOT_FOUND', message: "Token အား ရှာမတွေ့ပါ။" });
                     }
