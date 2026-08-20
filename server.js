@@ -404,7 +404,7 @@ app.post('/api/check-in', (req, res) => {
                 SELECT Appointment_id, 
                        TIMESTAMPDIFF(MINUTE, ?, CONCAT(appointment_date, ' ', appointment_time)) AS mins_left
                 FROM appointments 
-                WHERE patient_uid = ? AND doctor_code = ? AND appointment_date = ? AND status = 'waiting'
+                WHERE patient_uid = ? AND doctor_code = ? AND appointment_date = ? AND status = ('waiting','skipped')
             `;
             
             db.query(checkSql, [current_myanmar_time, uid, qrParts[1], today], (err, result) => {
