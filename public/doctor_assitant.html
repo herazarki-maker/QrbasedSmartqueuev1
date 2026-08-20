@@ -386,6 +386,10 @@
                                     <span style="color:#8b5cf6; font-size:13px; font-weight:bold; margin-right: 10px;">👨‍⚕️ ဆရာဝန်ခန်းထဲတွင်</span>
                                     <button class="action-btn btn-complete" onclick="openPrescriptionModal('${validId}', '${patient.token_number}')">Complete</button>
                                 `;
+                            }else if (patient.status === 'skipped') {
+                              actionUI = `
+                              <span style="color:#f97316; font-size:13px; font-weight:bold; margin-right: 10px;">⏭️ ယာယီကျော်ထားပါသည်</span>
+                              <button class="action-btn" onclick="callPatient('${validId}', '${patient.token_number}')" style="background: #0d6efd; color: white;">📢 Call Now</button>`;
                             }
                         } else {
                             // အောက်က တန်းစီနေသူများအတွက်
@@ -398,9 +402,12 @@
                                 actionUI = `<span style="color:#198754; font-size:13px; font-weight:bold;">✅ ရောက်ရှိပါပြီ</span>`;
                             } else if (patient.status === 'consulting') {
                                 actionUI = `<span style="color:#8b5cf6; font-size:13px; font-weight:bold;">👨‍⚕️ ဆရာဝန်ခန်းထဲတွင်</span>`;
+                            // isTopPatient မဟုတ်ဘဲ အောက်က တန်းစီနေသူများအတွက် စစ်တဲ့နေရာမှာ ဒါလေး ထပ်ဖြည့်ပါ
+                            } else if (patient.status === 'skipped') {
+                                   actionUI = `<span style="color:#f97316; font-size:13px; font-weight:bold;">⏭️ ယာယီကျော်ထားပါသည်</span>`;
                             }
+                           
                         }
-
                         card.innerHTML = `
                             <div>
                                 <div class="token-text">${patient.token_number}</div>

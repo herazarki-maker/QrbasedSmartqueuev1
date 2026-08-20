@@ -1260,3 +1260,54 @@ app.post("/api/admin/staff/reset-password", (req, res) => {
         res.json({ success: true, message: "🔑 Password ကို အောင်မြင်စွာ ပြောင်းလဲပေးလိုက်ပါပြီ!" });
     });
 });
+// ⏭️ Skip Patient API (လူနာကို ယာယီကျော်ရန်)
+app.post("/api/assistant/skip", async (req, res) => {
+    try {
+        const { appointment_id } = req.body;
+
+        // ၁။ ID ပါ/မပါ စစ်ဆေးခြင်း
+        if (!appointment_id) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Appointment ID လိုအပ်ပါသည်။" 
+            });
+        }
+
+        // ၂။ Database ထဲတွင် Status ကို 'skipped' ဟု ပြောင်းခြင်း
+        // (မှတ်ချက် - မင်းရဲ့ ER Diagram အရ Table နာမည်က APPOINTMENTS ဖြစ်ပြီး column က status ဖြစ်ပါတယ်)
+        const updateQuery = `
+            UPDATE APPOINTMENTS 
+            SET status = 'skipped' 
+            WHERE appointment_id = ?
+        `;
+        
+        // db.query နေရာမှာ မင်းသုံးနေကျ Database Connection Variable ကို ပြောင်းသုံးပါ
+        const [result] = await db.query(updateQuery, [appointment_id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "လူနာ အချက်အလက် ရှာမတွေ့ပါ။" 
+            });
+        }
+
+        // ၃။ Socket.io သုံးပြီး Frontend ကို Refresh လုပ်ခိုင်းခြင်း
+        // (မင်းရဲ့ HTML မှာ socket.on("update_queue") ရေးထားတဲ့အတွက် ဒါလေးခေါ်လိုက်တာနဲ့ Auto ပြောင်းသွားပါမယ်)
+        if (global.io) {
+            global.io.emit("update_queue");
+        }
+
+        // ၄။ အောင်မြင်ကြောင်း Frontend ကို ပြန်ပို့ခြင်း
+        return res.json({ 
+            success: true, 
+            message: "လူနာကို ယာယီကျော်လိုက်ပါပြီ။" 
+        });
+
+    } catch (error) {
+        console.error("Skip Error:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: "Server Error ဖြစ်နေပါသည်။" 
+        });
+    }
+});
