@@ -300,8 +300,9 @@
         function openTimeModal() { document.getElementById("timeModal").style.display = "flex"; }
         function closeTimeModal() { document.getElementById("timeModal").style.display = "none"; }
 
-        async function fetchSettings() {
-            const response = await fetch("/api/settings");
+       async function fetchSettings() {
+            // 🌟 ပြင်ဆင်ချက်: URL အနောက်တွင် doctor_code ကို တွဲပို့ပေးမည်
+            const response = await fetch(`/api/settings?doctor_code=${DOCTOR_CODE}`);
             const result = await response.json();
             if(result.success) {
                 clinicOpenTime = result.settings.open_time;
@@ -318,7 +319,12 @@
             const response = await fetch("/api/settings/update", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ open_time: newOpen, close_time: newClose })
+                // 🌟 ပြင်ဆင်ချက်: Backend သို့ doctor_code ကိုပါ ထည့်သွင်း ပေးပို့မည်
+                body: JSON.stringify({ 
+                    doctor_code: DOCTOR_CODE, 
+                    open_time: newOpen, 
+                    close_time: newClose 
+                })
             });
             const result = await response.json();
             if(result.success) {
@@ -328,6 +334,8 @@
                 closeTimeModal();
             }
         }
+
+       
 
         // 🌟 "Start Queue" ကို နှိပ်လိုက်သောအခါ
         async function startQueueAction() {

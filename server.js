@@ -543,18 +543,46 @@ app.post("/api/assistant/complete", (req, res) => {
     });
 });
 // Settings API
+// 🌟 (အသစ်) ဆရာဝန်တစ်ယောက်ချင်းစီအတွက် အချိန်ကို ယာယီမှတ်ထားမည့် နေရာ
+const doctorTimes = {};
+
+// ==========================================
+// Settings API (GET) - ဆရာဝန် Code ပါလျှင် သီးသန့်အချိန်ကို ထုတ်ပေးမည်
+// ==========================================
 app.get("/api/settings", (req, res) => {
+    const docCode = req.query.doctor_code; // Frontend က ပို့မပို့ စစ်မည်
+
     db.query("SELECT * FROM clinic_settings WHERE id = 1", (err, result) => {
         if (err) return res.json({ success: false });
-        res.json({ success: true, settings: result[0] });
+        
+        let settings = result[0];
+        
+        // 🌟 ဆရာဝန် Code လည်းပါမယ်၊ သူ့အတွက် သီးသန့်ပြင်ထားတဲ့အချိန်လည်း ရှိနေမယ်ဆိုရင်
+        if (docCode && doctorTimes[docCode]) {
+            settings.open_time = doctorTimes[docCode].open_time || settings.open_time;
+            settings.close_time = doctorTimes[docCode].close_time || settings.close_time;
+        }
+        
+        res.json({ success: true, settings: settings });
     });
 });
 
+// ==========================================
+// Settings API (POST) - အချိန်ကို Update လုပ်မည်
+// ==========================================
 app.post("/api/settings/update", (req, res) => {
-    const { open_time, close_time } = req.body;
+    const { doctor_code, open_time, close_time } = req.body;
+
+    // 🌟 ဆရာဝန် Code ပါလာရင် Database ကို မထိဘဲ Memory ပေါ်မှာပဲ မှတ်မည် (Global မဖြစ်တော့ဘူး)
+    if (doctor_code) {
+        doctorTimes[doctor_code] = { open_time, close_time };
+        return res.json({ success: true, message: "ဤဆရာဝန်အတွက် အချိန်ကို သီးသန့် ပြောင်းလဲသတ်မှတ်ပြီးပါပြီ။" });
+    }
+
+    // မပါလာရင်တော့ မူလအတိုင်း Database ကိုပဲ Global အနေနဲ့ ပြင်မည်
     db.query("UPDATE clinic_settings SET open_time = ?, close_time = ? WHERE id = 1", [open_time, close_time], (err) => {
         if (err) return res.json({ success: false, message: "Error" });
-        res.json({ success: true, message: "အချိန် ပြောင်းလဲသတ်မှတ်ပြီးပါပြီ။" });
+        res.json({ success: true, message: "ဆေးခန်းဖွင့်ချိန် ပြောင်းလဲသတ်မှတ်ပြီးပါပြီ။" });
     });
 });
 
