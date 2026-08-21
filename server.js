@@ -1042,17 +1042,14 @@ app.post('/api/patient/cancel', (req, res) => {
         });
     });
 });
-//=======================================
-// Admin - လူနာအကောင့်ကို အပြီးတိုင် ဖျက်မည့် API
-// ==========================================
+
 app.get("/api/patient/status/:uid", (req, res) => {
     const today = new Date().toLocaleDateString('en-CA');
-    // 🌟 JOIN သုံးပြီး room_number ကို ယူမည်
     const sql = `
         SELECT a.token_number, a.status, d.room_number 
         FROM appointments a
         JOIN doctors d ON a.doctor_code = d.doctor_code
-        WHERE a.patient_uid = ? AND a.appointment_date = ? AND a.status IN ('waiting', 'arrived', 'consulting', 'completed')
+        WHERE a.patient_uid = ? AND a.appointment_date = ? AND a.status IN ('waiting', 'skipped', 'arrived', 'consulting', 'completed')
         ORDER BY a.Appointment_id DESC LIMIT 1
     `;
     db.query(sql, [req.params.uid, today], (err, result) => {
@@ -1114,7 +1111,7 @@ app.get('/api/patient/active-booking/:uid', (req, res) => {
         SELECT a.*, d.name AS doctor_name 
         FROM appointments a
         LEFT JOIN doctors d ON a.doctor_code = d.doctor_code
-        WHERE a.patient_uid = ? AND a.status = 'waiting' AND a.appointment_date >= CURDATE()
+        WHERE a.patient_uid = ? AND a.status IN('waiting','skipped') AND a.appointment_date >= CURDATE()
         LIMIT 1
     `;
 
