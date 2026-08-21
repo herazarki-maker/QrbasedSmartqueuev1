@@ -270,14 +270,14 @@
                     
                     fetchNowServing();
                 
-                } else if (status === 'waiting') {
-                    // 💡 မရောက်သေးလျှင် ကင်မရာ ဖွင့်မည်
-                    hasPlayedTurnSound = false; 
-                    
-                    document.getElementById("resultBox").style.display = "none";
-                    document.getElementById("completedBox").style.display = "none";
-                    document.getElementById("reader").style.display = "block";
-                    startScanner();
+                } else if (status === 'waiting' || status === 'skipped') {
+                  // 💡 မရောက်သေးလျှင် (သို့) ယာယီကျော်ခံထားရလျှင် ကင်မရာ ဖွင့်မည်
+                     hasPlayedTurnSound = false; 
+    
+                 document.getElementById("resultBox").style.display = "none";
+                 document.getElementById("completedBox").style.display = "none";
+                 document.getElementById("reader").style.display = "block";
+                 startScanner();
                 }
             } else {
                 document.getElementById("reader").innerHTML = "<p style='color:red; text-align:center; padding: 20px; font-weight: 500;'>ယနေ့အတွက် Booking မရှိပါ။</p>";

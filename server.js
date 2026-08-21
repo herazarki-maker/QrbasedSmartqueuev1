@@ -602,19 +602,18 @@ app.get("/api/current-token/:docCode", (req, res) => {
 // ==========================================
 // Patient Status API (Scanner တွင် Booking စစ်ရန်)
 // ==========================================
+// ထပ်နေတဲ့ နေရာတိုင်းမှာ ဒါကိုပဲ အစားထိုးပါ
 app.get("/api/patient/status/:uid", (req, res) => {
     const today = new Date().toLocaleDateString('en-CA');
-    // 🌟 ဤနေရာရှိ IN () ထဲတွင် 'consulting' ကိုပါ ထပ်ပေါင်းထည့်ပေးလိုက်ပါသည်
     const sql = `
-        SELECT token_number, status 
-        FROM appointments 
-        WHERE patient_uid = ? AND appointment_date = ? AND status IN ('waiting', 'arrived', 'consulting', 'completed')
-        ORDER BY Appointment_id DESC LIMIT 1
+        SELECT a.token_number, a.status, d.room_number 
+        FROM appointments a
+        JOIN doctors d ON a.doctor_code = d.doctor_code
+        WHERE a.patient_uid = ? AND a.appointment_date = ? AND a.status IN ('waiting', 'skipped', 'arrived', 'consulting', 'completed')
+        ORDER BY a.Appointment_id DESC LIMIT 1
     `;
     db.query(sql, [req.params.uid, today], (err, result) => {
-        if (err || result.length === 0) {
-            return res.json({ success: false });
-        }
+        if (err || result.length === 0) return res.json({ success: false });
         res.json({ success: true, appointment: result[0] });
     });
 });
@@ -1043,20 +1042,6 @@ app.post('/api/patient/cancel', (req, res) => {
     });
 });
 
-app.get("/api/patient/status/:uid", (req, res) => {
-    const today = new Date().toLocaleDateString('en-CA');
-    const sql = `
-        SELECT a.token_number, a.status, d.room_number 
-        FROM appointments a
-        JOIN doctors d ON a.doctor_code = d.doctor_code
-        WHERE a.patient_uid = ? AND a.appointment_date = ? AND a.status IN ('waiting', 'skipped', 'arrived', 'consulting', 'completed')
-        ORDER BY a.Appointment_id DESC LIMIT 1
-    `;
-    db.query(sql, [req.params.uid, today], (err, result) => {
-        if (err || result.length === 0) return res.json({ success: false });
-        res.json({ success: true, appointment: result[0] });
-    });
-});
 // =================================================================
 // 🌟 1. SYSTEM RULES: Auto No-Show & Auto Lock (၁ မိနစ် တစ်ခါ Auto အလုပ်လုပ်မည်)
 // =================================================================
@@ -1102,7 +1087,7 @@ app.get("/api/patient/status/:uid", (req, res) => {
     });
 }, 60000); // 60000 ms = 1 Minute*/
 
-// 🌟 လူနာတစ်ဦးတွင် လက်ရှိ 'waiting' ဖြစ်နေသော Booking ရှိမရှိ စစ်ဆေးမည့် API
+
 app.get('/api/patient/active-booking/:uid', (req, res) => {
     const uid = req.params.uid;
 
