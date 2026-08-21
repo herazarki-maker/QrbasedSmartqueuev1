@@ -401,11 +401,11 @@ app.post('/api/check-in', (req, res) => {
             if (setRes && setRes.length > 0) earlyLimit = parseInt(setRes[0].setting_value);
 
             const checkSql = `
-                SELECT Appointment_id, 
-                       TIMESTAMPDIFF(MINUTE, ?, CONCAT(appointment_date, ' ', appointment_time)) AS mins_left
-                FROM appointments 
-                WHERE patient_uid = ? AND doctor_code = ? AND appointment_date = ? AND status = ('waiting','skipped')
-            `;
+                          SELECT Appointment_id, 
+                         TIMESTAMPDIFF(MINUTE, ?, CONCAT(appointment_date, ' ', appointment_time)) AS mins_left
+                           FROM appointments 
+                          WHERE patient_uid = ? AND doctor_code = ? AND appointment_date = ? AND status IN ('waiting','skipped')
+                           `;
             
             db.query(checkSql, [current_myanmar_time, uid, qrParts[1], today], (err, result) => {
                 if (err) return res.json({ success: false, errorType: 'NOT_FOUND', message: "Database Error" });
