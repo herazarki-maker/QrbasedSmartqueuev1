@@ -278,21 +278,20 @@ app.post('/api/book-appointment', (req, res) => {
         return res.json(data);
     };
 
-    // 🌟 ၁။ ဆေးခန်းပိတ်/မပိတ် အရင်စစ်မည်
-    db.query("SELECT open_time FROM clinic_settings WHERE id = 1", (err, timeRes) => {
-                        let clinicStartTime = '10:00:00'; 
-                        
-                        // 🌟 ၁။ ဤဆရာဝန်အတွက် သီးသန့်အချိန် ပြင်ထားတာရှိရင် အဲ့ဒီအချိန်ကို အရင်ယူမည်
-                        if (doctorTimes[doctor_code] && doctorTimes[doctor_code].open_time) {
-                            clinicStartTime = doctorTimes[doctor_code].open_time;
-                        } 
-                        // 🌟 ၂။ မရှိရင်တော့ မူလ Global ဆေးခန်းအချိန်ကို ယူမည်
-                        else if (timeRes && timeRes.length > 0 && timeRes[0].open_time) {
-                            clinicStartTime = timeRes[0].open_time; 
-                        }
+    // ၁။ ဆေးခန်းပိတ်/မပိတ် အရင်စစ်မည်
+    db.query("SELECT close_time FROM clinic_settings WHERE id = 1", (err, setRes) => {
+        let clinicCloseTime = '17:00'; // Default ညနေ ၅ နာရီ
+        if (!err && setRes.length > 0 && setRes[0].close_time) {
+            clinicCloseTime = setRes[0].close_time;
+        }
 
-                        const insertSql = "INSERT INTO appointments (patient_uid, doctor_code, appointment_date, appointment_time, status, token_number) VALUES (?, ?, ?, ?, 'waiting', ?)";
-                        
+        const exactToday = getTodayDate();
+        if (date === exactToday && isClinicClosed(clinicCloseTime)) {
+            return sendResponse({ success: false, message: "⚠️ တောင်းပန်ပါသည်။ ယနေ့အတွက် ဆေးခန်းပိတ်သွားပြီဖြစ်၍ Booking ထပ်တင်ခွင့်မရှိတော့ပါ။ မနက်ဖြန်အတွက်သာ ရက်စွဲရွေးချယ်ပြီး တင်ပေးပါ။" });
+        }
+
+        // ၂။ Booking အကြိမ်ရေ စစ်ဆေးမည့်အပိုင်း (ဒီအပိုင်း ပျောက်သွားလို့ Error တက်တာပါ)
+        const checkLimitSql = "SELECT COUNT(*) as total_booked FROM appointments WHERE patient_uid = ? AND appointment_date = ?";
         
         db.query(checkLimitSql, [uid, date], (err, limitRes) => {
             if (err) return sendResponse({ success: false, message: "Database Error" });
@@ -323,7 +322,13 @@ app.post('/api/book-appointment', (req, res) => {
 
                     db.query("SELECT open_time FROM clinic_settings WHERE id = 1", (err, timeRes) => {
                         let clinicStartTime = '10:00:00'; 
-                        if (timeRes && timeRes.length > 0 && timeRes[0].open_time) {
+                        
+                        // 🌟 ဆရာဝန်အတွက် သီးသန့်အချိန် ပြင်ထားတာရှိရင် အဲ့ဒီအချိန်ကို အရင်ယူမည်
+                        if (doctorTimes[doctor_code] && doctorTimes[doctor_code].open_time) {
+                            clinicStartTime = doctorTimes[doctor_code].open_time;
+                        } 
+                        // 🌟 မရှိရင်တော့ မူလ Global ဆေးခန်းအချိန်ကို ယူမည်
+                        else if (timeRes && timeRes.length > 0 && timeRes[0].open_time) {
                             clinicStartTime = timeRes[0].open_time; 
                         }
 
