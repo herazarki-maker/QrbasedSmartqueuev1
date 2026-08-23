@@ -251,7 +251,7 @@
            <div class="form-group" id="staffRoleGroup">
                 <label>Role:</label>
                 <select id="staffRole" class="setting-input">
-                    <option value="Admin Counter">Counter</option>
+                    <option value="Counter">Counter</option>
                     <option value="Doctor Assistant">Doctor Assistant</option>
                 </select>
             </div>
@@ -645,7 +645,7 @@
         }
 
        // 🌟 Edit တွင် Role ကို အပြီးဖျောက်မည့် Function သစ် 🌟
-        function openStaffModal(mode, id = '', role = 'Admin Counter', name = '', status = 'active', phone = '') {
+        function openStaffModal(mode, id = '', role = 'Counter', name = '', status = 'active', phone = '') {
             document.getElementById('staffModal').style.display = 'flex';
             document.getElementById('staffMode').value = mode;
             document.getElementById('staffId').value = id;
@@ -655,7 +655,7 @@
             document.getElementById('staffPhone').value = phone; 
             document.getElementById('staffStatus').value = status.toLowerCase();
             
-            const exactRole = (role.toLowerCase() === 'doctor assistant') ? 'Doctor Assistant' : 'Admin Counter';
+            const exactRole = (role.toLowerCase() === 'doctor assistant') ? 'Doctor Assistant' : 'Counter';
             document.getElementById('staffRole').value = exactRole;
 
             if (mode === 'edit') {
