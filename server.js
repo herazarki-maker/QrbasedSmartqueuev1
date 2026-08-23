@@ -279,20 +279,20 @@ app.post('/api/book-appointment', (req, res) => {
     };
 
     // 🌟 ၁။ ဆေးခန်းပိတ်/မပိတ် အရင်စစ်မည်
-    db.query("SELECT close_time FROM clinic_settings WHERE id = 1", (err, setRes) => {
-        let clinicCloseTime = '17:00'; // Default ညနေ ၅ နာရီ
-        if (!err && setRes.length > 0 && setRes[0].close_time) {
-            clinicCloseTime = setRes[0].close_time;
-        }
+    db.query("SELECT open_time FROM clinic_settings WHERE id = 1", (err, timeRes) => {
+                        let clinicStartTime = '10:00:00'; 
+                        
+                        // 🌟 ၁။ ဤဆရာဝန်အတွက် သီးသန့်အချိန် ပြင်ထားတာရှိရင် အဲ့ဒီအချိန်ကို အရင်ယူမည်
+                        if (doctorTimes[doctor_code] && doctorTimes[doctor_code].open_time) {
+                            clinicStartTime = doctorTimes[doctor_code].open_time;
+                        } 
+                        // 🌟 ၂။ မရှိရင်တော့ မူလ Global ဆေးခန်းအချိန်ကို ယူမည်
+                        else if (timeRes && timeRes.length > 0 && timeRes[0].open_time) {
+                            clinicStartTime = timeRes[0].open_time; 
+                        }
 
-        const exactToday = getTodayDate();
-        // ယနေ့အတွက် Booking တင်တာဖြစ်ပြီး၊ ဆေးခန်းလည်း ပိတ်သွားပြီဆိုရင် လက်မခံပါ
-        if (date === exactToday && isClinicClosed(clinicCloseTime)) {
-            return sendResponse({ success: false, message: "⚠️ တောင်းပန်ပါသည်။ ယနေ့အတွက် ဆေးခန်းပိတ်သွားပြီဖြစ်၍ Booking ထပ်တင်ခွင့်မရှိတော့ပါ။ မနက်ဖြန်အတွက်သာ ရက်စွဲရွေးချယ်ပြီး တင်ပေးပါ။" });
-        }
-
-        // ၂။ မူလ Booking အကြိမ်ရေ စစ်ဆေးမည့်အပိုင်း ဆက်လုပ်မည်
-        const checkLimitSql = "SELECT COUNT(*) as total_booked FROM appointments WHERE patient_uid = ? AND appointment_date = ?";
+                        const insertSql = "INSERT INTO appointments (patient_uid, doctor_code, appointment_date, appointment_time, status, token_number) VALUES (?, ?, ?, ?, 'waiting', ?)";
+                        
         
         db.query(checkLimitSql, [uid, date], (err, limitRes) => {
             if (err) return sendResponse({ success: false, message: "Database Error" });
@@ -557,10 +557,10 @@ app.get("/api/settings", (req, res) => {
         
         let settings = result[0];
         
-        // 🌟 ဆရာဝန် Code လည်းပါမယ်၊ သူ့အတွက် သီးသန့်ပြင်ထားတဲ့အချိန်လည်း ရှိနေမယ်ဆိုရင်
+        // 🌟 ဆရာဝန် Code လည်းပါမယ်၊ သူ့အတွက် သီးသန့်ပြင်ထားတဲ့အချိန်လည်း Memory မှာ ရှိနေမယ်ဆိုရင်
         if (docCode && doctorTimes[docCode]) {
-            settings.open_time = doctorTimes[docCode].open_time || settings.open_time;
-            settings.close_time = doctorTimes[docCode].close_time || settings.close_time;
+            settings.open_time = doctorTimes[docCode].open_time;
+            settings.close_time = doctorTimes[docCode].close_time;
         }
         
         res.json({ success: true, settings: settings });
@@ -568,22 +568,33 @@ app.get("/api/settings", (req, res) => {
 });
 
 // ==========================================
-// Settings API (POST) - အချိန်ကို Update လုပ်မည်
+// Settings API (POST) - ဆရာဝန်အလိုက် သီးသန့်အချိန်ကို Update လုပ်မည်
 // ==========================================
 app.post("/api/settings/update", (req, res) => {
     const { doctor_code, open_time, close_time } = req.body;
 
-    // 🌟 ဆရာဝန် Code ပါလာရင် Database ကို မထိဘဲ Memory ပေါ်မှာပဲ မှတ်မည် (Global မဖြစ်တော့ဘူး)
     if (doctor_code) {
+        // 🌟 ၁။ ဒီဆရာဝန်တစ်ယောက်တည်းအတွက် အချိန်ကို Memory ထဲမှာ ယာယီမှတ်ထားလိုက်မည်
         doctorTimes[doctor_code] = { open_time, close_time };
-        return res.json({ success: true, message: "ဤဆရာဝန်အတွက် အချိန်ကို သီးသန့် ပြောင်းလဲသတ်မှတ်ပြီးပါပြီ။" });
+        
+        // 🌟 ၂။ ဒီဆရာဝန်ရဲ့ ဒီနေ့ Booking တွေအားလုံးကိုပါ အချိန်လိုက်ပြောင်းပေးမည် (QR Error မတက်အောင်)
+        const updateAppointmentsSql = `
+            UPDATE appointments 
+            SET appointment_time = ? 
+            WHERE doctor_code = ? AND appointment_date = CURDATE() AND status = 'waiting'
+        `;
+        
+        db.query(updateAppointmentsSql, [open_time, doctor_code], (err) => {
+            if (err) console.error("Time update error:", err);
+            return res.json({ success: true, message: "ဤဆရာဝန်အတွက် အချိန်ကို သီးသန့် ပြောင်းလဲသတ်မှတ်ပြီးပါပြီ!" });
+        });
+    } else {
+        // Global Update (Admin မှ ပြောင်းလဲသည့်အခါ)
+        db.query("UPDATE clinic_settings SET open_time = ?, close_time = ? WHERE id = 1", [open_time, close_time], (err) => {
+            if (err) return res.json({ success: false, message: "Error" });
+            res.json({ success: true, message: "ဆေးခန်းဖွင့်ချိန် အားလုံးကို ပြောင်းလဲပြီးပါပြီ။" });
+        });
     }
-
-    // မပါလာရင်တော့ မူလအတိုင်း Database ကိုပဲ Global အနေနဲ့ ပြင်မည်
-    db.query("UPDATE clinic_settings SET open_time = ?, close_time = ? WHERE id = 1", [open_time, close_time], (err) => {
-        if (err) return res.json({ success: false, message: "Error" });
-        res.json({ success: true, message: "ဆေးခန်းဖွင့်ချိန် ပြောင်းလဲသတ်မှတ်ပြီးပါပြီ။" });
-    });
 });
 
 // ==========================================
@@ -833,18 +844,18 @@ app.get("/api/admin/staff", (req, res) => {
 });
 
 // ==========================================
-// Admin - Add New Staff API (V2 Database အတွက်)
+// Admin - Add New Staff API
 // ==========================================
 app.post("/api/admin/staff/add", (req, res) => {
-    const { name, password, role, status, dr_id } = req.body; 
+    // 🌟 phone ကိုပါ လှမ်းဖမ်းမည်
+    const { name, phone, password, role, status, dr_id } = req.body; 
 
-    // Assistant ဖြစ်မှသာ dr_id ကို ထည့်မည်၊ မဟုတ်ပါက null ထားမည်
     const doctorId = (role === 'Doctor Assistant' && dr_id) ? dr_id : null;
 
-    // 🌟 အားလုံးကို staff ဇယားတစ်ခုတည်းထဲသို့ သွင်းမည်
-    const sql = "INSERT INTO staff (username, password, role, status, dr_id) VALUES (?, ?, ?, ?, ?)";
+    // 🌟 ဇယားထဲသို့ phone ပါ ထည့်သွင်းမည်
+    const sql = "INSERT INTO staff (username, phone, password, role, status, dr_id) VALUES (?, ?, ?, ?, ?, ?)";
     
-    db.query(sql, [name, password, role, status, doctorId], (err) => {
+    db.query(sql, [name, phone, password, role, status, doctorId], (err) => {
         if (err) {
             console.error("Insert Staff Error:", err);
             return res.json({ success: false, message: "Database Error ကြောင့် သိမ်း၍မရပါ။" });
@@ -854,17 +865,18 @@ app.post("/api/admin/staff/add", (req, res) => {
 });
 
 // ==========================================
-// Admin - Edit Staff API (V2 Database အတွက်)
+// Admin - Edit Staff API
 // ==========================================
 app.post("/api/admin/staff/edit", (req, res) => {
-    const { id, name, role, status, dr_id } = req.body;
+    // 🌟 phone ကိုပါ လှမ်းဖမ်းမည်
+    const { id, name, phone, role, status, dr_id } = req.body;
     
     const doctorId = (role === 'Doctor Assistant' && dr_id) ? dr_id : null;
 
-    // 🌟 staff ဇယားတစ်ခုတည်းကိုသာ Update လုပ်မည်
-    const sql = "UPDATE staff SET username = ?, role = ?, status = ?, dr_id = ? WHERE id = ?";
+    // 🌟 phone အကွက်ကိုပါ Update လုပ်ပေးမည်
+    const sql = "UPDATE staff SET username = ?, phone = ?, role = ?, status = ?, dr_id = ? WHERE id = ?";
     
-    db.query(sql, [name, role, status, doctorId, id], (err) => {
+    db.query(sql, [name, phone, role, status, doctorId, id], (err) => {
         if (err) return res.json({ success: false, message: "Update ပြုလုပ်ရာတွင် Database Error ဖြစ်နေပါသည်။" });
         res.json({ success: true, message: `${role} ကို အောင်မြင်စွာ ပြင်ဆင်လိုက်ပါပြီ။` });
     });

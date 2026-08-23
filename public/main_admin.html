@@ -147,7 +147,7 @@
 
         <div id="staffView" class="view-section">
             <div class="add-staff-container">
-                <h2>People & Staff</h2>
+                <h2>Doctors & Staff</h2>
                 <div>
                     <button class="action-btn" style="background: #16a34a; color: white; padding: 10px 15px;" onclick="openStaffModal('add')">
                          <i class="fas fa-plus"></i> Add New Staff
@@ -239,7 +239,7 @@
            
             <div class="form-group">
                 <label>Phone Number:</label>
-                <input type="text" id="staffPhone" class="setting-input" placeholder="09xxxxxxxxx">
+                <input type="text" id="staffPhone" class="setting-input" placeholder="09xxxxxxxxx" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
             </div>
             
             <div class="form-group" id="staffPasswordGroup">
@@ -685,22 +685,31 @@
             }
         }
 
-        async function saveStaff() {
+       async function saveStaff() {
             const mode = document.getElementById('staffMode').value;
             const data = {
                 id: document.getElementById('staffId').value,
                 name: document.getElementById('staffName').value,
-                phone: document.getElementById('staffPhone').value,
+                // 🌟 ဖုန်းနံပါတ် ရှေ့နောက်က space တွေကိုပါ အလိုအလျောက် ဖြတ်ပေးမည်
+                phone: document.getElementById('staffPhone').value.trim(), 
                 password: document.getElementById('staffPassword').value,
                 role: document.getElementById('staffRole').value,
                 status: document.getElementById('staffStatus').value,
                 dr_id: document.getElementById('staffDoctor').value
             };
 
+            // ၁။ နာမည်နှင့် Password လိုအပ်ချက်များကို စစ်ဆေးမည်
             if (!data.name || (mode === 'add' && !data.password)) {
-                return showSmartAlert("အချက်အလက်များကို ပြည့်စုံစွာ ဖြည့်ပါ။");
+                return showSmartAlert("အချက်အလက်များကို ပြည့်စုံစွာ ဖြည့်ပါ။", "warning");
             }
 
+            // 🌟 ၂။ ဖုန်းနံပါတ် Validation စစ်ဆေးခြင်း (09 ဖြင့်စပြီး ဂဏန်း ၁၁ လုံး တိတိ ဖြစ်ရမည်)
+            const phoneRegex = /^09\d{9}$/; 
+            if (!phoneRegex.test(data.phone)) {
+                return showSmartAlert("ဖုန်းနံပါတ် မှားယွင်းနေပါသည်။ '09' ဖြင့်စသော ဂဏန်း (၁၁) လုံး တိတိသာ ထည့်ပါ။", "warning");
+            }
+
+            // ၃။ အကုန်မှန်ကန်မှသာ Backend သို့ Data ပို့မည်
             const endpoint = mode === 'add' ? "/api/admin/staff/add" : "/api/admin/staff/edit";
 
             try {
@@ -711,25 +720,19 @@
                 });
 
                 const result = await response.json();
-                alert(result.message);
                 
                 if (result.success) {
+                    showSmartAlert(result.message, "success");
                     document.getElementById('staffModal').style.display = 'none';
                     loadStaff(); 
+                } else {
+                    showSmartAlert(result.message, "error");
                 }
             } catch (error) {
                 console.error("Error saving staff:", error);
-                showSmartAlert("Network Error!");
+                showSmartAlert("Network Error!", "error");
             }
         }
-
-        document.getElementById('staffRole').addEventListener('change', function() {
-            if (this.value === 'Doctor Assistant') {
-                document.getElementById('doctorSelectGroup').style.display = 'block';
-            } else {
-                document.getElementById('doctorSelectGroup').style.display = 'none';
-            }
-        });
 
         async function loadDoctorsForDropdown() {
             try {

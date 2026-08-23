@@ -72,7 +72,9 @@
                          <option value="Female">Female (မ)</option>
                       </select>
                  </div>
-                <input type="text" id="patPhone" placeholder="ဖုန်းနံပါတ် (Phone Number)" required>
+                 <input type="text" id="patPhone" class="setting-input" placeholder="09xxxxxxxxx" 
+                      maxlength="11" 
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                 <input type="text" id="patAddress" placeholder="နေရပ်လိပ်စာ (Address)" required>
                 <input type="password" id="patPassword" placeholder="Password (လူနာသတ်မှတ်လိုသော)" required>
                 
@@ -116,7 +118,12 @@
             const phone = document.getElementById("patPhone").value;
             const address = document.getElementById("patAddress").value;
             const password = document.getElementById("patPassword").value;
-
+               
+            const phoneregex=/^09\d{9}$/;
+            if(!phoneregex.test(phone)){
+                alert("Wrong phone number.Please enter the right phone number!");
+                return
+            }
             const response = await fetch("/create-patient", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
