@@ -17,7 +17,7 @@
         <div class="form-section">
             <div id="existingBookingCard" class="hidden" style="background: #f8fafc; border: 2px dashed #3b82f6; padding: 30px 20px; border-radius: 12px; text-align: center; margin-bottom: 20px;">
                 <div style="font-size: 45px; margin-bottom: 10px;">🎟️</div>
-                <h3 style="color: #1e3a8a; margin-top: 0; font-size: 22px;">လူကြီးမင်းတွင် လက်ရှိ Booking ရှိနှင့်ပြီးပါပြီ</h3>
+                <h3 style="color: #1e3a8a; margin-top: 0; font-size: 22px;">သင်၏ လက်ရှိ Booking အချက်အလက်များ</h3>
                 <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">သင်၏ တန်းစီအချက်အလက်များမှာ အောက်ပါအတိုင်း ဖြစ်ပါသည် -</p>
                 
                 <div style="background: white; border: 1px solid #cbd5e1; padding: 20px; border-radius: 10px; text-align: left; line-height: 2; margin-bottom: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
@@ -34,24 +34,67 @@
             </div>
             <div id="bookingFormContent">
              <div class="input-group">
-                <label>ရောဂါ / ဌာန ရွေးချယ်ပါ</label>
-                    <select id="specialtySelect" onchange="loadDoctors()">
-                         <option value="">-- ရွေးချယ်ပါ --</option>
-                    </select>
-           
-             </div>
+    <label>ပြသမည့်ဌာနကို ရွေးချယ်ပါ</label>
+    
+    <div class="mobile-dropdown-container">
+        <!-- ပင်မ ရွေးချယ်ရန် ခလုတ် -->
+        <button type="button" class="main-dropdown-btn" id="selectedSpecialtyBtn" onclick="toggleMainDropdown()">
+            <span>-- ရွေးချယ်ပါ --</span> <i class="fas fa-chevron-down"></i>
+        </button>
+        
+        <div class="dropdown-list" id="mainDropdownList">
+            
+            <!-- 🫀 နှလုံးဌာန (အံဆွဲပါသည်) -->
+            <div>
+                <button type="button" class="category-btn" onclick="toggleSubCategory('heartSub')">
+                    🫀 Heart (နှလုံး) <i class="fas fa-plus"></i>
+                </button>
+                <div class="sub-category-list" id="heartSub">
+                    <!-- Database ထဲက အတိအကျ နာမည်တွေဖြစ်ရပါမယ် -->
+                    <button type="button" class="sub-item" onclick="selectSpecialty('Cardiologist')">Cardiologist (နှလုံးအထူးကု)</button>
+                    <button type="button" class="sub-item" onclick="selectSpecialty('Pediatric Cardiologist')">Pediatric Cardiologist (ကလေးနှလုံး)</button>
+                </div>
+            </div>
+
+            <!-- 🧠 အာရုံကြောဌာန (အံဆွဲပါသည်) -->
+            <div>
+                <button type="button" class="category-btn" onclick="toggleSubCategory('neuroSub')">
+                    🧠 Neuro (အာရုံကြော) <i class="fas fa-plus"></i>
+                </button>
+                <div class="sub-category-list" id="neuroSub">
+                    <button type="button" class="sub-item" onclick="selectSpecialty('Neurologist')">Neurologist (အာရုံကြောဆေးကု)</button>
+                    <button type="button" class="sub-item" onclick="selectSpecialty('Neurosurgeon')">Neurosurgeon (အာရုံကြောခွဲစိတ်)</button>
+                </div>
+            </div>
+
+            <!-- 🦷 သွားဘက်ဆိုင်ရာ (တိုက်ရိုက်ရွေးရန်) -->
+            <button type="button" class="category-btn" onclick="selectSpecialty('Dentist')">
+                🦷 Dentist (သွားဘက်ဆိုင်ရာ)
+            </button>
+            
+            <!-- 🦴 အရိုးဌာန -->
+            <button type="button" class="category-btn" onclick="selectSpecialty('Orthopedist')">
+                🦴 Orthopedist (အရိုးအကြော)
+            </button>
+
+        </div>
+    </div>
+
+    <!-- 🌟 အရေးကြီး: မင်းရဲ့ loadDoctors() က ဒီ id ကို လာဖတ်မှာဖြစ်လို့ ဒါလေး မဖြစ်မနေ ပါရပါမယ် -->
+    <input type="hidden" id="specialtySelect" value="">
+</div>
 
             <div class="input-group">
                 <label>ဆရာဝန် ရွေးချယ်ပါ</label>
                 <select id="doctorSelect" onchange="showDoctorInfo()" disabled>
-                    <option value="">-- အရင်ဆုံး ဌာနရွေးပါ --</option>
+                    <option value="">-- ကျေးဇူးပြု၍ ဌာနကို ဦးစွာရွေးချယ်ပါ --</option>
                 </select>
             </div>
 
            <div id="docInfoCard" class="info-card hidden">
                 <h4 id="docName">Dr. Name</h4>
                 <p style="margin-bottom: 5px;">လုပ်သက်: <span id="docExp">--</span></p>
-                <p style="margin-bottom: 5px; color: #059669; font-weight: 600;">📅 ထိုင်မည့်ရက်: <span id="docDays" style="color: #1e293b;">--</span></p>
+                <p style="margin-bottom: 5px; color: #059669; font-weight: 600;">📅 ဆေးခန်းထိုင်မည့်ရက်: <span id="docDays" style="color: #1e293b;">--</span></p>
                 <p style="margin-bottom: 15px; color: #d97706; font-weight: 600;">⏰ အချိန်: <span id="docTime" style="color: #1e293b;">--</span></p>
                 <p style="margin-bottom: 15px; color: #7e22ce; font-weight: 600; background: #f3e8ff; padding: 5px 10px; border-radius: 6px; display: inline-block;">
                     🚪 အခန်း: <span id="docRoom" style="color: #6b21a8; font-size: 16px;">--</span>
@@ -62,7 +105,7 @@
                 </div>
             </div>
            <div style="margin-bottom: 20px; text-align: left;">
-                <label for="appointmentDate" style="display: block; margin-bottom: 8px; color: #475569; font-weight: 600;">ပြသလိုသည့် ရက်စွဲရွေးချယ်ပါ <span style="color: red;">*</span></label>
+                <label for="appointmentDate" style="display: block; margin-bottom: 8px; color: #475569; font-weight: 600;">ဆေးခန်းပြသမည့် ရက်စွဲကို ရွေးချယ်ပါ <span style="color: red;">*</span></label>
                 <input type="date" id="appointmentDate" onchange="validateSelectedDate()" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 15px; box-sizing: border-box; background: #f8fafc; cursor: pointer;" required>
             </div>
             <div class="input-group">
@@ -98,7 +141,7 @@
                 <div style="font-size: 55px; margin-bottom: 10px; color: #ef4444;">🚫</div>
                 <h3 style="color: #991b1b; margin-top: 0; font-size: 22px;">Booking ပြည့်သွားပါပြီ</h3>
                 <p style="color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
-                    တောင်းပန်ပါသည်။ ယနေ့အတွက် ဤဆရာဝန်၏ Booking (၅၀) ဦး ပြည့်သွားပါပြီ။ မနက်ဖြန်မှ ပြန်လည်ကြိုးစားပေးပါ။
+                    တောင်းပန်ပါသည်။ ယနေ့အတွက် ဤဆရာဝန်၏ Booking (၅၀) ဦး ပြည့်သွားပါပြီ။ နောက်နေ့များအတွက်သာ ကြိုတင်စာရင်းပေးနိုင်ပါသည်။
                 </p>
                 <button onclick="closeLimitModal()" style="width: 100%; padding: 12px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s;">
                     နားလည်ပါပြီ
@@ -292,16 +335,17 @@ async function generateToken() {
             const docDetails = currentDoctorsList.find(d => d.id === selectedDocCode || d.doctor_code === selectedDocCode);
             document.getElementById("successRoom").innerText = docDetails ? (docDetails.room_number || "မသတ်မှတ်ရသေးပါ") : "မသတ်မှတ်ရသေးပါ";
             
+           // 🌟 ပြင်ဆင်ချက်: ရွေးချယ်ထားသော ဆရာဝန် (selectedDocCode) ကိုပါ URL တွင် ထည့်ပို့ရမည်
             try {
-                const setRes = await fetch("/api/settings");
+                const setRes = await fetch(`/api/settings?doctor_code=${selectedDocCode}`);
                 const setData = await setRes.json();
                 if (setData.success && setData.settings && setData.settings.open_time) {
                     document.getElementById("successTime").innerText = setData.settings.open_time + " နာရီမှ စတင်ပါမည်";
                 } else {
-                    document.getElementById("successTime").innerText = "10:00 နာရီမှ စတင်ပါမည်";
+                    document.getElementById("successTime").innerText = "10:00 AM နာရီမှ စတင်ပါမည်";
                 }
             } catch(e) {
-                document.getElementById("successTime").innerText = "10:00 နာရီမှ စတင်ပါမည်";
+                document.getElementById("successTime").innerText = "10:00 AM နာရီမှ စတင်ပါမည်";
             }
 
             document.getElementById("tokenModal").classList.remove("hidden");
@@ -362,7 +406,7 @@ async function generateToken() {
             }
 
             // (၁) ဆရာဝန်ဌာနစာရင်းများကို အရင် ခေါ်တင်မည်
-            loadSpecialties();
+            //loadSpecialties();
 
             // (၂) Server ဆီသို့ ဤ UID ဖြင့် Booking ရှိမရှိ လှမ်းစစ်မည်
             try {
@@ -398,17 +442,17 @@ async function generateToken() {
                     const cleanDate = new Date(rawDate).toLocaleDateString('en-CA');
                     document.getElementById("exDate").innerText = cleanDate;
                     
-                    // 🌟 (၃) ဆေးခန်းဖွင့်ချိန်ကို သေချာအောင် လှမ်းခေါ်မည်
+                   // 🌟 (၃) ဆေးခန်းဖွင့်ချိန်ကို သေချာအောင် လှမ်းခေါ်မည် (doctor_code ပါ ထည့်ပို့ပါမည်)
                     try {
-                        const setRes = await fetch("/api/settings");
+                        const setRes = await fetch(`/api/settings?doctor_code=${result.booking.doctor_code}`);
                         const setData = await setRes.json();
                         if (setData.success && setData.settings && setData.settings.open_time) {
                             document.getElementById("exTime").innerText = setData.settings.open_time + " နာရီမှ စတင်ပါမည်";
                         } else {
-                            document.getElementById("exTime").innerText = "10:00 နာရီမှ စတင်ပါမည်"; // API မရပါက Default 10:00 ပြမည်
+                            document.getElementById("exTime").innerText = "10:00 AM နာရီမှ စတင်ပါမည်"; // API မရပါက Default 10:00 ပြမည်
                         }
                     } catch(err) {
-                        document.getElementById("exTime").innerText = "10:00 နာရီမှ စတင်ပါမည်";
+                        document.getElementById("exTime").innerText = "10:00 AM နာရီမှ စတင်ပါမည်";
                     }
                 } // 🌟 if (result.success && result.hasBooking) ၏ အပိတ် Bracket အမှန်
             } catch (error) {
@@ -427,6 +471,32 @@ async function generateToken() {
         function closeLimitModal() {
             document.getElementById("limitModal").style.display = "none";
         }
+        // ၁။ ပင်မ Dropdown ကြီးကို အဖွင့်/အပိတ် လုပ်ရန်
+function toggleMainDropdown() {
+    const list = document.getElementById('mainDropdownList');
+    list.style.display = (list.style.display === 'block') ? 'none' : 'block';
+}
+
+// ၂။ အတွင်းထဲက Sub-category (အံဆွဲလေးများ) ကို အဖွင့်/အပိတ် လုပ်ရန်
+function toggleSubCategory(subId) {
+    const subList = document.getElementById(subId);
+    subList.style.display = (subList.style.display === 'block') ? 'none' : 'block';
+}
+
+// ၃။ လူနာက အထူးကုကို အပြီးသတ် ရွေးချယ်လိုက်သောအခါ
+function selectSpecialty(specialtyName) {
+    // ခလုတ်ပေါ်က စာသားကို ပြောင်းမည်
+    document.getElementById('selectedSpecialtyBtn').innerHTML = `<span>${specialtyName}</span> <i class="fas fa-check-circle" style="color: #10b981;"></i>`;
+    
+    // Backend အတွက် Hidden Input ထဲကို တန်ဖိုးထည့်မည်
+    document.getElementById('specialtySelect').value = specialtyName;
+    
+    // Dropdown ကြီးကို ပြန်ပိတ်လိုက်မည်
+    document.getElementById('mainDropdownList').style.display = 'none';
+    
+    // 🌟 မင်းရဲ့ မူလ loadDoctors() ကို ဒီနေရာကနေ လှမ်းခေါ်လိုက်မည်
+    loadDoctors(); 
+}
     </script>
 </body>
 </html>

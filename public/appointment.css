@@ -264,3 +264,76 @@ body {
 .hidden {
     display: none !important;
 }
+/* 🌟 Mobile-Friendly Dropdown Container */
+.mobile-dropdown-container {
+    width: 100%;
+    position: relative;
+}
+
+.main-dropdown-btn {
+    width: 100%;
+    padding: 15px;
+    background: white;
+    border: 2px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #334155;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.dropdown-list {
+    display: none; /* မူလက ဖျောက်ထားမည် */
+    width: 100%;
+    background: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    margin-top: 5px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    overflow: hidden;
+    position: absolute;
+    z-index: 1000;
+}
+
+/* 🌟 Parent Category (ဥပမာ - နှလုံး) */
+.category-btn {
+    width: 100%;
+    padding: 15px;
+    background: #f8fafc;
+    border: none;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+    display: flex;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+/* 🌟 Sub Category (ဥပမာ - ကလေးနှလုံး) */
+.sub-category-list {
+    display: none; /* အံဆွဲပိတ်ထားမည် */
+    background: #ffffff;
+}
+
+.sub-item {
+    width: 100%;
+    padding: 12px 15px 12px 40px; /* အနည်းငယ် အတွင်းသို့ ဝင်နေစေရန် */
+    border: none;
+    border-bottom: 1px dashed #e2e8f0;
+    background: transparent;
+    text-align: left;
+    font-size: 15px;
+    color: #3b82f6;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.sub-item:active {
+    background: #eff6ff; /* ဖုန်းဖြင့် နှိပ်လိုက်လျှင် အရောင်ပြောင်းရန် */
+}

@@ -55,7 +55,7 @@
         </div>
        <ul class="nav-links">
             <li class="active"><a href="#" onclick="switchTab('dashboard', this)"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-            <li><a href="#" onclick="switchTab('patients', this)"><i class="fas fa-users-slash"></i> Patient Compliance</a></li>
+            <li><a href="#" onclick="switchTab('patients', this)"><i class="fas fa-users-slash"></i> Patient Monitoring</a></li>
             <li><a href="#" onclick="switchTab('staff', this)"><i class="fas fa-user-md"></i> Doctors & Staffs</a></li>
             <li><a href="#" onclick="switchTab('settings', this)"><i class="fas fa-cogs"></i> System Rules</a></li>
         </ul>
@@ -124,7 +124,7 @@
 
         <div id="patientsView" class="view-section">
             <div class="add-staff-container" style="justify-content: space-between;">
-                <h2>Patient Compliance</h2>
+                <h2>Patient Monitoring</h2>
                 <input type="text" id="searchInput" onkeyup="searchPatients()" placeholder="Search by UID or Name..." style="padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; width: 300px;">
             </div>
             
@@ -294,8 +294,25 @@
             </div>
 
             <div class="form-group">
-                <label>Specialty (အထူးကု):</label>
-                <input type="text" id="newDrSpecialty" class="setting-input" placeholder="e.g. Heart Specialist">
+               <select id="newDrSpecialty" class="setting-input" style="padding: 12px; border-radius: 6px; border: 1px solid #ccc;">
+    <optgroup label="🫀 Heart (နှလုံး)">
+        <option value="Cardiologist">Cardiologist (နှလုံးအထူးကု)</option>
+        <option value="Pediatric Cardiologist">Pediatric Cardiologist (ကလေးနှလုံး)</option>
+        <option value="Cardiac Surgeon">Cardiac Surgeon (နှလုံးခွဲစိတ်)</option>
+    </optgroup>
+    <optgroup label="🧠 Neuro (အာရုံကြော)">
+        <option value="Neurologist">Neurologist (အာရုံကြောဆေးကု)</option>
+        <option value="Neurosurgeon">Neurosurgeon (အာရုံကြောခွဲစိတ်)</option>
+    </optgroup>
+    <optgroup label="အခြား အထူးကုများ">
+        <!-- 🌟 Screenshot ထဲက ရှိပြီးသား ဌာနများကို ထပ်ဖြည့်ထားပါသည် -->
+        <option value="Dentist">Dentist (သွားဘက်ဆိုင်ရာ)</option>
+        <option value="Orthopedist">Orthopedist (အရိုးအကြော)</option>
+        <option value="Ophthalmologist">Ophthalmologist (မျက်စိအထူးကု)</option>
+        <option value="Psychiatrist">Psychiatrist (စိတ်ကျန်းမာရေး)</option>
+        <option value="General Physician">General Physician (အထွေထွေသမားတော်)</option>
+    </optgroup>
+</select>
             </div>
             
             <div class="form-group">
@@ -355,8 +372,8 @@
             <h3 style="margin: 0 0 10px 0; color: #1e293b; font-size: 20px; font-weight: 700;">သေချာပြီလား?</h3>
             <p id="smartConfirmMessage" style="margin: 0 0 25px 0; color: #64748b; font-size: 15px; line-height: 1.5;"></p>
             <div style="display: flex; gap: 10px; justify-content: center;">
-                <button id="btnConfirmYes" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; flex: 1; transition: background 0.2s;">Yes (လုပ်မည်)</button>
-                <button id="btnConfirmNo" style="background: #e2e8f0; color: #475569; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; flex: 1; transition: background 0.2s;">Cancel</button>
+                <button id="btnConfirmYes" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; flex: 1; transition: background 0.2s;">အတည်ပြုမည်</button>
+                <button id="btnConfirmNo" style="background: #e2e8f0; color: #475569; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; flex: 1; transition: background 0.2s;">ပယ်ဖျက်မည်</button>
             </div>
         </div>
     </div>
@@ -365,7 +382,25 @@
             <h3 style="margin-bottom: 20px;">✏️ ဆရာဝန်အချက်အလက် ပြင်ရန်</h3>
             <input type="hidden" id="editDocCode">
             <input type="text" id="editDocName" placeholder="အမည်" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px;">
-            <input type="text" id="editDocSpecialty" placeholder="အထူးကု (ဥပမာ - အထွေထွေ)" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px;">
+            <select id="editDocSpecialty" class="setting-input" style="padding: 12px; border-radius: 6px; border: 1px solid #ccc;">
+    <optgroup label="🫀 Heart (နှလုံး)">
+        <option value="Cardiologist">Cardiologist (နှလုံးအထူးကု)</option>
+        <option value="Pediatric Cardiologist">Pediatric Cardiologist (ကလေးနှလုံး)</option>
+        <option value="Cardiac Surgeon">Cardiac Surgeon (နှလုံးခွဲစိတ်)</option>
+    </optgroup>
+    <optgroup label="🧠 Neuro (အာရုံကြော)">
+        <option value="Neurologist">Neurologist (အာရုံကြောဆေးကု)</option>
+        <option value="Neurosurgeon">Neurosurgeon (အာရုံကြောခွဲစိတ်)</option>
+    </optgroup>
+    <optgroup label="အခြား အထူးကုများ">
+        <!-- 🌟 Screenshot ထဲက ရှိပြီးသား ဌာနများကို ထပ်ဖြည့်ထားပါသည် -->
+        <option value="Dentist">Dentist (သွားဘက်ဆိုင်ရာ)</option>
+        <option value="Orthopedist">Orthopedist (အရိုးအကြော)</option>
+        <option value="Ophthalmologist">Ophthalmologist (မျက်စိအထူးကု)</option>
+        <option value="Psychiatrist">Psychiatrist (စိတ်ကျန်းမာရေး)</option>
+        <option value="General Physician">General Physician (အထွေထွေသမားတော်)</option>
+    </optgroup>
+</select>
             <input type="text" id="editDocExperience" placeholder="လုပ်သက် (ဥပမာ - ၅ နှစ်)" style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px;"><label style="display: block; margin-bottom: 8px; font-size: 14px; color: #475569; font-weight: bold;">ထိုင်မည့်ရက်များ ရွေးချယ်ရန်:</label>
             <div id="editDaysContainer" class="days-selector">
                 <label><input type="checkbox" value="တနင်္လာ"> <span>တနင်္လာ</span></label>
