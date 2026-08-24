@@ -42,7 +42,7 @@
             <span>-- ရွေးချယ်ပါ --</span> <i class="fas fa-chevron-down"></i>
         </button>
         
-        <div class="dropdown-list" id="mainDropdownList">
+       < class="dropdown-list" id="mainDropdownList">
             
             <!-- 🫀 နှလုံးဌာန (အံဆွဲပါသည်) -->
             <div>
@@ -50,9 +50,9 @@
                     🫀 Heart (နှလုံး) <i class="fas fa-plus"></i>
                 </button>
                 <div class="sub-category-list" id="heartSub">
-                    <!-- Database ထဲက အတိအကျ နာမည်တွေဖြစ်ရပါမယ် -->
                     <button type="button" class="sub-item" onclick="selectSpecialty('Cardiologist')">Cardiologist (နှလုံးအထူးကု)</button>
                     <button type="button" class="sub-item" onclick="selectSpecialty('Pediatric Cardiologist')">Pediatric Cardiologist (ကလေးနှလုံး)</button>
+                    <button type="button" class="sub-item" onclick="selectSpecialty('Cardiac Surgeon')">Cardiac Surgeon (နှလုံးခွဲစိတ်)</button>
                 </div>
             </div>
 
@@ -77,9 +77,20 @@
                 🦴 Orthopedist (အရိုးအကြော)
             </button>
 
-        </div>
-    </div>
+            <!-- 👁️ မျက်စိဌာန -->
+            <button type="button" class="category-btn" onclick="selectSpecialty('Ophthalmologist')">
+                👁️ Ophthalmologist (မျက်စိအထူးကု)
+            </button>
 
+            <!-- 🧩 စိတ်ကျန်းမာရေးဌာန -->
+            <button type="button" class="category-btn" onclick="selectSpecialty('Psychiatrist')">
+                🧩 Psychiatrist (စိတ်ကျန်းမာရေး)
+            </button>
+
+            <!-- 🩺 အထွေထွေသမားတော် -->
+            <button type="button" class="category-btn" onclick="selectSpecialty('General Physician')">
+                🩺 General Physician (အထွေထွေသမားတော်)
+            </button>
     <!-- 🌟 အရေးကြီး: မင်းရဲ့ loadDoctors() က ဒီ id ကို လာဖတ်မှာဖြစ်လို့ ဒါလေး မဖြစ်မနေ ပါရပါမယ် -->
     <input type="hidden" id="specialtySelect" value="">
 </div>
