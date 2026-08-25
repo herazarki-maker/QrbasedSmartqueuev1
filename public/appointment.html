@@ -305,17 +305,27 @@ async function generateToken() {
     const selectedDate = document.getElementById("appointmentDate").value; 
     
     if (!specValue || !selectedDocCode || !selectedDate) {
-        alert("အချက်အလက်များကို ပြည့်စုံစွာ ရွေးချယ်ပါ။");
+        alert("ကျေးဇူးပြု၍ အချက်အလက်များကို ပြည့်စုံစွာ ရွေးချယ်ပါ။");
         return;
     }
 
-    // 🌟 (အသစ်ထည့်ထားသော အပိုင်း) Booking ၅၀ ပြည့်/မပြည့် စစ်ဆေးပြီး Custom Popup ပြရန် 🌟
+    // 🌟 ပြင်ဆင်ချက်: Booking မတင်ခင် ဆရာဝန်ထိုင်မည့်ရက် ဟုတ်/မဟုတ် နောက်တစ်ကြိမ် တင်းကျပ်စွာ စစ်ဆေးမည်
     const selectedDocDetails = currentDoctorsList.find(d => d.id === selectedDocCode || d.doctor_code === selectedDocCode);
     
-    if (selectedDocDetails && (selectedDocDetails.booked_count || 0) >= 50) {
-        // alert အစား HTML Popup ကြီးကို လှမ်းဖော်လိုက်မည်
-        document.getElementById("limitModal").style.display = "flex"; 
-        return; // ဤနေရာတွင် ရပ်တန့်လိုက်မည် (Backend သို့ Booking ဆက်မတင်တော့ပါ)
+    if (selectedDocDetails) {
+        const availableDaysStr = selectedDocDetails.available_days || "နေ့စဉ်";
+        
+        // ရက်စွဲ မကိုက်ညီပါက ဤနေရာတွင် ချက်ချင်း ရပ်တန့်မည် (Block လုပ်မည်)
+        if (!isDoctorAvailableOnDate(selectedDate, availableDaysStr)) {
+            alert(`⚠️ တောင်းပန်ပါသည်။ ဤဆရာဝန်သည် ( ${availableDaysStr} ) တွင်သာ ဆေးခန်းထိုင်ပါသည်။ ဆရာဝန်ထိုင်သော ရက်များကိုသာ ရွေးချယ်ပေးပါ။`);
+            return; 
+        }
+
+        // 🌟 Booking ၅၀ ပြည့်/မပြည့် စစ်ဆေးပြီး Custom Popup ပြရန်
+        if ((selectedDocDetails.booked_count || 0) >= 50) {
+            document.getElementById("limitModal").style.display = "flex"; 
+            return; 
+        }
     }
     // 🌟 ==================================================== 🌟
 
@@ -351,7 +361,7 @@ async function generateToken() {
             const docDetails = currentDoctorsList.find(d => d.id === selectedDocCode || d.doctor_code === selectedDocCode);
             document.getElementById("successRoom").innerText = docDetails ? (docDetails.room_number || "မသတ်မှတ်ရသေးပါ") : "မသတ်မှတ်ရသေးပါ";
             
-           // 🌟 ပြင်ဆင်ချက်: ရွေးချယ်ထားသော ဆရာဝန် (selectedDocCode) ကိုပါ URL တွင် ထည့်ပို့ရမည်
+            // ဆရာဝန်၏ သီးသန့်အချိန်ကို ယူမည်
             try {
                 const setRes = await fetch(`/api/settings?doctor_code=${selectedDocCode}`);
                 const setData = await setRes.json();
