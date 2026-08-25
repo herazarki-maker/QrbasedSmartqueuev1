@@ -58,13 +58,13 @@
                         <p>ဆေးမှတ်တမ်းဟောင်းများ ကြည့်ရန်</p>
                     </div>
                 </button>
-                <button class="nav-button" onclick="cancelAppointment()" style="background-color: #fef2f2; border: 1px solid #fca5a5;">
-                    <span class="icon">❌</span>
-                    <div class="btn-text">
-                        <h3 style="color: #dc2626;">Cancel Appointment</h3>
-                        <p style="color: #ef4444;">ယူထားသော နံပါတ်ကို ပြန်ဖျက်ရန်</p>
-                    </div>
-                </button>
+                <button class="nav-button" onclick="promptCancelBooking()" style="background-color: #fef2f2; border: 1px solid #fca5a5;">
+                 <span class="icon">❌</span>
+                <div class="btn-text">
+                <h3 style="color: #dc2626;">Cancel Appointment</h3>
+                 <p style="color: #ef4444;">ယူထားသော နံပါတ်ကို ပြန်ဖျက်ရန်</p>
+               </div>
+         </button>
             </main>
 
             <button class="logout-btn" onclick="logoutAccount()">Logout</button>
@@ -95,7 +95,35 @@
             </button>
         </div>
     </div>
-   
+   <!-- 🌟 Cancel မလုပ်မီ စည်းကမ်းချက်များ ပြသမည့် Popup Window 🌟 -->
+<div id="cancelRuleModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999;">
+    <div class="modal-box" style="background: white; padding: 30px 25px; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.2); transform: scale(0.9); animation: popIn 0.3s forwards;">
+        
+        <div style="font-size: 50px; margin-bottom: 15px;">⚠️</div>
+        <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 20px; font-weight: 700;">စည်းမျဉ်းစည်းကမ်းများ</h3>
+        
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; text-align: left; margin-bottom: 25px;">
+            <p style="color: #475569; font-size: 14px; margin: 0 0 10px 0; line-height: 1.6;">
+                ၁။ တစ်ရက်လျှင် သတ်မှတ်ထားသော အကြိမ်အရေအတွက်သာ Booking ကို Cancel ပြုလုပ်ခွင့် ရှိပါသည်။
+            </p>
+            <p style="color: #475569; font-size: 14px; margin: 0 0 10px 0; line-height: 1.6;">
+                ၂။ သတ်မှတ်အကြိမ်ထက် ကျော်လွန်ပါက သင့်အကောင့်အား ယာယီ ပိတ်သိမ်း (Lock) မည်ဖြစ်ပါသည်။
+            </p>
+            <p style="color: #ef4444; font-size: 14px; margin: 0; line-height: 1.6; font-weight: 600;">
+                ၃။ Cancel ပြုလုပ်ပြီးပါက ဤ Token ကို ပြန်လည်ရယူ၍ မရနိုင်တော့ပါ။
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button onclick="closeCancelRuleModal()" style="flex: 1; padding: 12px; background: #e2e8f0; color: #475569; border: none; border-radius: 8px; font-weight: 600; font-size: 15px; cursor: pointer;">
+                နောက်သို့ပြန်သွားမည်
+            </button>
+            <button id="btnConfirmCancel" style="flex: 1; padding: 12px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 15px; cursor: pointer;">
+                ဆက်လက်လုပ်ဆောင်မည်
+            </button>
+        </div>
+    </div>
+</div>
     <script>
         const currentUID = localStorage.getItem("loggedInUID");
         const socket = io(); // Socket.io စတင်ချိတ်ဆက်မည်
@@ -216,30 +244,65 @@
             }
         };
 
-        async function cancelAppointment() {
-            const isConfirmed = confirm("⚠️ လူကြီးမင်း၏ Booking ကို တကယ် ပယ်ဖျက်မှာ သေချာပြီလား?");
-            if (!isConfirmed) return;
+       // ၁။ "Cancel" ခလုတ်ကို နှိပ်လိုက်လျှင် Popup ကို ဖော်ပေးမည့် Function
+function promptCancelBooking() {
+    const modal = document.getElementById('cancelRuleModal');
+    if(modal) modal.style.display = 'flex';
+}
 
-            try {
-                const response = await fetch("/api/patient/cancel", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ uid: currentUID }) 
-                });
+// ၂။ "နောက်သို့ပြန်သွားမည်" ကိုနှိပ်လျှင် Popup ပြန်ပိတ်မည့် Function
+function closeCancelRuleModal() {
+    const modal = document.getElementById('cancelRuleModal');
+    if(modal) modal.style.display = 'none';
+}
 
-                const result = await response.json();
+// ၃။ "ဆက်လက်လုပ်ဆောင်မည်" ကိုနှိပ်လျှင် တကယ် ဖျက်မည့် Function
+async function confirmCancelBooking() {
+    const btn = document.getElementById('btnConfirmCancel');
+    if (btn) {
+        btn.innerText = "ခဏစောင့်ပါ...";
+        btn.disabled = true;
+    }
 
-                if (result.success) {
-                    showSmartAlert(result.message, "success");
-                    setTimeout(() => window.location.reload(), 1500);
-                } else {
-                    showSmartAlert(result.message, "warning");
-                }
-            } catch (error) {
-                console.error("Error cancelling appointment:", error);
-                showSmartAlert("Network Error ကြောင့် ဖျက်၍ မရပါ။", "error");
+    try {
+        // 🌟 Backend သို့ Cancel လုပ်ရန် Data လှမ်းပို့ခြင်း 
+        const response = await fetch("/api/patient/cancel", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ uid: currentUID }) 
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Popup ကို ပြန်ပိတ်မည်
+            document.getElementById('cancelRuleModal').style.display = 'none';
+            
+            showSmartAlert(result.message, "success");
+            
+            // 🌟 စာမျက်နှာကို Refresh လုပ်မည်
+            setTimeout(() => window.location.reload(), 1500); 
+        } else {
+            document.getElementById('cancelRuleModal').style.display = 'none';
+            showSmartAlert(result.message || "ပယ်ဖျက်ရာတွင် အမှားအယွင်းရှိပါသည်", "warning");
+            
+            if (btn) {
+                btn.innerText = "ဆက်လက်လုပ်ဆောင်မည်";
+                btn.disabled = false;
             }
         }
+    } catch (error) {
+        console.error("Cancel Error:", error);
+        document.getElementById('cancelRuleModal').style.display = 'none';
+        showSmartAlert("စနစ်ချို့ယွင်းမှုကြောင့် ပယ်ဖျက်၍ မရပါ။ (Network Error)", "error");
+        
+        // Error တက်ရင် ခလုတ်ကို ပြန်ဖွင့်ပေးမည်
+        if (btn) {
+            btn.innerText = "ဆက်လက်လုပ်ဆောင်မည်";
+            btn.disabled = false;
+        }
+    }
+}
 
         function showSmartAlert(message, type = 'success') {
             const modal = document.getElementById('smartAlertModal');

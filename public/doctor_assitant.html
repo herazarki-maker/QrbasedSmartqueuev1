@@ -534,7 +534,7 @@
 
         async function submitComplete() {
             const pText = document.getElementById("prescriptionText").value;
-            if (!pText.trim()) return alert("ကျေးဇူးပြု၍ ဆေးစာ ရေးထည့်ပါ။");
+            if (!pText.trim()) return alert("ကျေးဇူးပြု၍ ဆေးကုသမှုညွှန်ကြားချက် ရေးပါ။");
 
             const response = await fetch("/api/assistant/complete", {
                 method: "POST",
