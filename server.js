@@ -464,11 +464,13 @@ app.post('/api/check-in', (req, res) => {
 
 // လူနာ၏ ဆေးမှတ်တမ်း (History) ကို ဆွဲယူမည့် API
 app.get("/api/patient-history/:uid", (req, res) => {
+    // 🌟 ပြင်ဆင်ချက်: appointments ဇယားနှင့် doctors ဇယားကို ချိတ် (JOIN) ပြီး ဆရာဝန်နာမည်ကို ဆွဲထုတ်မည်
     const sql = `
-        SELECT appointment_date, token_number, doctor_code, prescription 
-        FROM appointments 
-        WHERE patient_uid = ? AND status = 'completed'
-        ORDER BY appointment_date DESC
+        SELECT a.appointment_date, a.token_number, d.name AS doctor_name, a.prescription 
+        FROM appointments a
+        LEFT JOIN doctors d ON a.doctor_code = d.doctor_code
+        WHERE a.patient_uid = ? AND a.status = 'completed'
+        ORDER BY a.appointment_date DESC
     `;
     db.query(sql, [req.params.uid], (err, results) => {
         if (err) return res.json({ success: false, message: "Database Error" });
