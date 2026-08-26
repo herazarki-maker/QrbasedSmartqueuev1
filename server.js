@@ -267,6 +267,24 @@ app.post('/api/book-appointment', (req, res) => {
         return res.json({ success: false, message: "အချက်အလက် မပြည့်စုံပါ။ ရက်စွဲ ရွေးချယ်ရန် လိုအပ်ပါသည်။" });
     }
 
+const checkSql = "SELECT * FROM appointments WHERE patient_uid = ? AND appointment_date = ?";
+    
+    db.query(checkSql, [uid, date], (checkErr, checkResults) => {
+        if (checkErr) {
+            console.error("Database Check Error:", checkErr);
+            return res.json({ success: false, message: "စနစ်ချို့ယွင်းမှုဖြစ်ပွားနေပါသည်။" });
+        }
+
+        // ⚠️ အကယ်၍ အဲ့ဒီရက်အတွက် မှတ်တမ်းရှိနေရင် (Cancel, Complete ဘာဖြစ်ဖြစ်) နောက်ထပ် လက်မခံတော့ပါ
+        if (checkResults.length > 0) {
+            return res.json({ 
+                success: false, 
+                message: "လူကြီးမင်းသည် ဤရက်စွဲအတွက် ရက်ချိန်းရယူထားပြီး ဖြစ်ပါသည်။ (တစ်ရက်လျှင် တစ်ကြိမ်သာ ရယူခွင့်ရှိပါသည်)" 
+            });
+        }
+    });
+
+    
     if (bookingLocks.has(uid)) {
         return res.json({ success: false, message: "စနစ်က အလုပ်လုပ်နေဆဲဖြစ်ပါသည်။ ခဏစောင့်ပြီးမှ ပြန်ကြိုးစားပါ။" });
     }
