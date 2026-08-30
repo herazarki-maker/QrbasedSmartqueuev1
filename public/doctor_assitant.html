@@ -391,7 +391,7 @@
                                 `;
                             } else if (patient.status === 'consulting') {
                                 actionUI = `
-                                    <span style="color:#8b5cf6; font-size:13px; font-weight:bold; margin-right: 10px;">👨‍⚕️ ဆရာဝန်ခန်းထဲတွင်</span>
+                                    <span style="color:#8b5cf6; font-size:13px; font-weight:bold; margin-right: 10px;">👨‍⚕️ Current treating</span>
                                     <button class="action-btn btn-complete" onclick="openPrescriptionModal('${validId}', '${patient.token_number}')">Complete</button>
                                 `;
                             } else if (patient.status === 'skipped') {
@@ -412,7 +412,7 @@
                             } else if (patient.status === 'arrived') {
                                 actionUI = `<span style="color:#198754; font-size:13px; font-weight:bold;">✅ ရောက်ရှိပါပြီ</span>`;
                             } else if (patient.status === 'consulting') {
-                                actionUI = `<span style="color:#8b5cf6; font-size:13px; font-weight:bold;">👨‍⚕️ ဆရာဝန်ခန်းထဲတွင်</span>`;
+                                actionUI = `<span style="color:#8b5cf6; font-size:13px; font-weight:bold;">👨‍⚕️ Current treating</span>`;
                             // isTopPatient မဟုတ်ဘဲ အောက်က တန်းစီနေသူများအတွက် စစ်တဲ့နေရာမှာ ဒါလေး ထပ်ဖြည့်ပါ
                            } else if (patient.status === 'skipped') {
                                actionUI = `
@@ -432,7 +432,7 @@
                         listDiv.appendChild(card);
                     });
                 } else {
-                    listDiv.innerHTML = `<p style="text-align: center; color: #198754; font-size: 18px; margin-top: 20px; font-weight: bold;">🎉 ယနေ့အတွက် တန်းစီနေသော လူနာမရှိတော့ပါ။ ဆေးခန်းပိတ်လို့ ရပါပြီ!</p>`;
+                    listDiv.innerHTML = `<p style="text-align: center; color: #198754; font-size: 18px; margin-top: 20px; font-weight: bold;">ယနေ့အတွက် လူနာအားလုံးကို ကြည့်ရှုပြီးပါပြီ။</p>`;
                 }
             } else {
                 listDiv.innerHTML = `<p style="text-align: center; color: #777; margin-top: 20px;">ယနေ့အတွက် Booking တင်ထားသော လူနာမရှိသေးပါ။</p>`;
