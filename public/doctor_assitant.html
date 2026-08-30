@@ -381,7 +381,7 @@
                                 actionUI = `
                                  <span style="color:#dc3545; font-size:13px; font-weight:bold; margin-right: 10px;">🔴 QR မဖတ်ရသေးပါ</span>
                                  <button class="action-btn btn-skip" onclick="skipPatient('${validId}')">Skip</button>
-                                 <button class="action-btn" onclick="markNoShow('${validId}', '${patient.patient_uid}')" style="background: #f97316; color: white; margin-left: 5px;">No-Show</button>
+                                 <button class="action-btn" onclick="markNoShow('${validId}', '${patient.patient_uid}')" style="background: #f97316; color: white; margin-left: 5px;">Absent</button>
                                  <button class="action-btn" onclick="cancelPatient('${validId}')" style="background: #ef4444; color: white; margin-left: 5px;">Cancel</button>
                                      `;
                             } else if (patient.status === 'arrived') {
@@ -398,7 +398,7 @@
                                 actionUI = `
                                     <span style="color:#f97316; font-size:13px; font-weight:bold; margin-right: 10px;">⏭️ ယာယီကျော်ထားပါသည်</span>
                                     <button class="action-btn btn-skip" onclick="skipPatient('${validId}')">Skip</button>
-                                    <button class="action-btn" onclick="markNoShow('${validId}', '${patient.patient_uid}')" style="background: #f97316; color: white; margin-left: 5px;">No-Show</button>
+                                    <button class="action-btn" onclick="markNoShow('${validId}', '${patient.patient_uid}')" style="background: #f97316; color: white; margin-left: 5px;">Absent</button>
                                     <button class="action-btn" onclick="cancelPatient('${validId}')" style="background: #ef4444; color: white; margin-left: 5px;">Cancel</button>
                                       `;
                            }
@@ -591,7 +591,7 @@
             document.getElementById("qrModal").style.display = "none";
         }
         async function markNoShow(appointmentId, patientUid) {
-            const confirmNoShow = confirm("⚠️ ဤလူနာကို No-Show (ပျက်ကွက်) အဖြစ် သတ်မှတ်မှာ သေချာပါသလား?\n(စည်းကမ်းဖောက်ဖျက်မှုအဖြစ် မှတ်တမ်းဝင်သွားပါမည်)");
+            const confirmNoShow = confirm("⚠️ ဤလူနာကို absent (ပျက်ကွက်) အဖြစ် သတ်မှတ်မှာ သေချာပါသလား?\n(စည်းကမ်းဖောက်ဖျက်မှုအဖြစ် မှတ်တမ်းဝင်သွားပါမည်)");
             if (!confirmNoShow) return;
 
             const response = await fetch("/api/assistant/no-show", {

@@ -256,9 +256,6 @@ app.get("/api/doctors/:specialty", (req, res) => {
         res.json({ success: true, doctors: results });
     });
 });
-// 🌟 RACE CONDITION ကာကွယ်ရန် UID များကို ခဏ သော့ခတ်ထားမည့် နေရာ
-const bookingLocks = new Set();
-
 // 🌟 လူနာ (သို့) Assistant ဘက်မှ Booking တင်မည့် API
 app.post('/api/book-appointment', (req, res) => {
     const { uid, doctor_code, date } = req.body; 
@@ -279,77 +276,88 @@ app.post('/api/book-appointment', (req, res) => {
         return res.json(data);
     };
 
-    const checkSql = "SELECT * FROM appointments WHERE patient_uid = ? AND appointment_date = ?";
+    // ၁။ ဤဆရာဝန်ကို ယနေ့ Cancel လုပ်ထားဖူးခြင်း ရှိ/မရှိ စစ်ဆေးမည် (Cancel ထားဖူးရင် ဒီဆရာဝန်ဆီ ပြန်တင်ခွင့်မရှိပါ)
+    const checkCanceledDoctorSql = "SELECT * FROM appointments WHERE patient_uid = ? AND doctor_code = ? AND appointment_date = ? AND status = 'cancelled'";
     
-    db.query(checkSql, [uid, date], (checkErr, checkResults) => {
-        if (checkErr) {
-            console.error("Database Check Error:", checkErr);
-            return sendResponse({ success: false, message: "စနစ်ချို့ယွင်းမှုဖြစ်ပွားနေပါသည်။" });
-        }
+    db.query(checkCanceledDoctorSql, [uid, doctor_code, date], (checkErr, canceledResults) => {
+        if (checkErr) return sendResponse({ success: false, message: "Database Check Error" });
 
-        if (checkResults.length > 0) {
+        if (canceledResults.length > 0) {
             return sendResponse({ 
                 success: false, 
-                message: "လူကြီးမင်းသည် ဤရက်စွဲအတွက် ရက်ချိန်းရယူထားပြီး ဖြစ်ပါသည်။ (တစ်ရက်လျှင် တစ်ကြိမ်သာ ရယူခွင့်ရှိပါသည်)" 
+                message: "⚠️ သင်သည် ဤဆရာဝန်ထံတွင် ယနေ့ ရက်ချိန်းဖျက်သိမ်းထားဖူးသောကြောင့် ထပ်မံတင်ခွင့် မရှိတော့ပါ။ (အခြားဆရာဝန်ကို ရွေးချယ်ပါ)" 
             });
         }
 
-        // ၁။ ဆေးခန်းပိတ်/မပိတ် အရင်စစ်မည်
-        db.query("SELECT close_time, open_time FROM clinic_settings WHERE id = 1", (err, setRes) => {
+        // ၂။ ယနေ့အတွက် Active ဖြစ်နေသော Booking ရှိ/မရှိ စစ်ဆေးမည် (Cancel လုပ်ထားတာ မဟုတ်ဘဲ တကယ်စောင့်နေတဲ့ Booking)
+        const checkActiveSql = "SELECT * FROM appointments WHERE patient_uid = ? AND appointment_date = ? AND status IN ('waiting', 'arrived', 'consulting')";
+        
+        db.query(checkActiveSql, [uid, date], (err, activeResults) => {
             if (err) return sendResponse({ success: false, message: "Database Error" });
 
-            let clinicCloseTime = '17:00'; 
-            let clinicStartTime = '10:00:00';
-
-            // 🌟 Doctor သီးသန့် အချိန်စစ်ဆေးခြင်း
-            if (doctorTimes[doctor_code] && doctorTimes[doctor_code].close_time) {
-                clinicCloseTime = doctorTimes[doctor_code].close_time;
-                clinicStartTime = doctorTimes[doctor_code].open_time;
-            } else if (setRes.length > 0) {
-                if(setRes[0].close_time) clinicCloseTime = setRes[0].close_time;
-                if(setRes[0].open_time) clinicStartTime = setRes[0].open_time;
+            // လက်ရှိ စောင့်နေတဲ့ Booking ရှိနေရင် နောက်ထပ်ပေးမတင်ဘူး (တစ်ချိန်တည်း Booking နှစ်ခု မရအောင်)
+            if (activeResults.length > 0) {
+                return sendResponse({ 
+                    success: false, 
+                    message: "လူကြီးမင်းသည် ဤရက်စွဲအတွက် ရက်ချိန်းရယူထားပြီး ဖြစ်ပါသည်။ (တစ်ကြိမ်လျှင် Booking တစ်ခုသာ တင်ခွင့်ရှိပါသည်)" 
+                });
             }
 
-            const exactToday = getTodayDate();
-            
-            // 🚨 ပိတ်ချိန်စစ်ခြင်း (ဒီနေရာမှန်သွားရင် ချက်ချင်း return ပြန်မည်၊ အောက်ဆက်မသွားပါ)
-            if (date === exactToday && isClinicClosed(clinicCloseTime)) {
-                return sendResponse({ success: false, message: "⚠️ တောင်းပန်ပါသည်။ ဤဆရာဝန်အတွက် ယနေ့ Booking တင်ခွင့် ပိတ်သွားပါပြီ။ မနက်ဖြန်အတွက်သာ ရက်စွဲရွေးချယ်ပြီး တင်ပေးပါ။" });
-            }
-
-            // ၂။ Booking အကြိမ်ရေ စစ်ဆေးမည်
-            const checkLimitSql = "SELECT COUNT(*) as total_booked FROM appointments WHERE patient_uid = ? AND appointment_date = ?";
-            
-            db.query(checkLimitSql, [uid, date], (err, limitRes) => {
+            // ၃။ ဆေးခန်းပိတ်/မပိတ် စစ်မည်
+            db.query("SELECT close_time, open_time FROM clinic_settings WHERE id = 1", (err, setRes) => {
                 if (err) return sendResponse({ success: false, message: "Database Error" });
 
-                if (limitRes[0].total_booked >= 3) {
-                    return sendResponse({ 
-                        success: false, 
-                        message: "⚠️ သင်သည် ယနေ့အတွက် Booking တင်ခွင့် အကြိမ်ရေ (၃) ကြိမ် ပြည့်သွားပါပြီ။\n(ထပ်မံတင်လိုပါက မနက်ဖြန်မှ ပြန်လည်ကြိုးစားပါ။)" 
-                    });
+                let clinicCloseTime = '17:00'; 
+                let clinicStartTime = '10:00:00';
+
+                if (doctorTimes[doctor_code] && doctorTimes[doctor_code].close_time) {
+                    clinicCloseTime = doctorTimes[doctor_code].close_time;
+                    clinicStartTime = doctorTimes[doctor_code].open_time;
+                } else if (setRes.length > 0) {
+                    if(setRes[0].close_time) clinicCloseTime = setRes[0].close_time;
+                    if(setRes[0].open_time) clinicStartTime = setRes[0].open_time;
                 }
 
-                // ၃။ Token အရေအတွက် တွက်ချက်မည်
-                const countSql = "SELECT COUNT(*) as count FROM appointments WHERE doctor_code = ? AND appointment_date = ?";
+                const exactToday = getTodayDate();
                 
-                db.query(countSql, [doctor_code, date], (err, countResult) => {
-                    if (err) return sendResponse({ success: false, message: "Token တွက်ချက်ရာတွင် အမှားဖြစ်နေပါသည်။" });
+                if (date === exactToday && isClinicClosed(clinicCloseTime)) {
+                    return sendResponse({ success: false, message: "⚠️ တောင်းပန်ပါသည်။ ဤဆရာဝန်အတွက် ယနေ့ Booking တင်ခွင့် ပိတ်သွားပါပြီ။ မနက်ဖြန်အတွက်သာ ရက်စွဲရွေးချယ်ပြီး တင်ပေးပါ။" });
+                }
 
-                    const nextNumber = countResult[0].count + 1;
-                    const tokenString = doctor_code + nextNumber.toString().padStart(3, '0');
+                // ၄။ ယနေ့အတွက် Booking တင်သည့် အကြိမ်ရေကို စစ်ဆေးမည် (Spam ကာကွယ်ရန် - Max 3 ခါပဲရမည်)
+                const checkLimitSql = "SELECT COUNT(*) as total_booked FROM appointments WHERE patient_uid = ? AND appointment_date = ?";
+                
+                db.query(checkLimitSql, [uid, date], (err, limitRes) => {
+                    if (err) return sendResponse({ success: false, message: "Database Error" });
 
-                    // ၄။ Booking ကို DataBase ထဲ သွင်းမည်
-                    const insertSql = "INSERT INTO appointments (patient_uid, doctor_code, appointment_date, appointment_time, status, token_number) VALUES (?, ?, ?, ?, 'waiting', ?)";
+                    if (limitRes[0].total_booked >= 3) {
+                        return sendResponse({ 
+                            success: false, 
+                            message: "⚠️ သင်သည် ယနေ့အတွက် Booking တင်ခွင့် (၃) ကြိမ် ပြည့်သွားပါပြီ။\n(ထပ်မံတင်လိုပါက မနက်ဖြန်မှ ပြန်လည်ကြိုးစားပါ။)" 
+                        });
+                    }
+
+                    // ၅။ Token အရေအတွက် တွက်ချက်မည်
+                    const countSql = "SELECT COUNT(*) as count FROM appointments WHERE doctor_code = ? AND appointment_date = ?";
                     
-                    db.query(insertSql, [uid, doctor_code, date, clinicStartTime, tokenString], (err) => {
-                        if (err) {
-                            console.error("Booking Insert Error:", err);
-                            return sendResponse({ success: false, message: "Booking တင်၍ မရပါ။" });
-                        }
+                    db.query(countSql, [doctor_code, date], (err, countResult) => {
+                        if (err) return sendResponse({ success: false, message: "Token တွက်ချက်ရာတွင် အမှားဖြစ်နေပါသည်။" });
 
-                        io.emit("update_queue");
-                        return sendResponse({ success: true, message: "Booking ကို အောင်မြင်စွာ တင်ပြီးပါပြီ။", token: tokenString });
+                        const nextNumber = countResult[0].count + 1;
+                        const tokenString = doctor_code + nextNumber.toString().padStart(3, '0');
+
+                        // ၆။ Booking ကို DataBase ထဲ သွင်းမည်
+                        const insertSql = "INSERT INTO appointments (patient_uid, doctor_code, appointment_date, appointment_time, status, token_number) VALUES (?, ?, ?, ?, 'waiting', ?)";
+                        
+                        db.query(insertSql, [uid, doctor_code, date, clinicStartTime, tokenString], (err) => {
+                            if (err) {
+                                console.error("Booking Insert Error:", err);
+                                return sendResponse({ success: false, message: "Booking တင်၍ မရပါ။" });
+                            }
+
+                            io.emit("update_queue");
+                            return sendResponse({ success: true, message: "Booking ကို အောင်မြင်စွာ တင်ပြီးပါပြီ။", token: tokenString });
+                        });
                     });
                 });
             });
