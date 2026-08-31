@@ -327,38 +327,46 @@ app.post('/api/book-appointment', (req, res) => {
                 }
 
                 // ၄။ ယနေ့အတွက် Booking တင်သည့် အကြိမ်ရေကို စစ်ဆေးမည် (Spam ကာကွယ်ရန် - Max 3 ခါပဲရမည်)
-                const checkLimitSql = "SELECT COUNT(*) as total_booked FROM appointments WHERE patient_uid = ? AND appointment_date = ?";
-                
-                db.query(checkLimitSql, [uid, date], (err, limitRes) => {
-                    if (err) return sendResponse({ success: false, message: "Database Error" });
-
-                    if (limitRes[0].total_booked >= 3) {
-                        return sendResponse({ 
-                            success: false, 
-                            message: "⚠️ သင်သည် ယနေ့အတွက် Booking တင်ခွင့် (၃) ကြိမ် ပြည့်သွားပါပြီ။\n(ထပ်မံတင်လိုပါက မနက်ဖြန်မှ ပြန်လည်ကြိုးစားပါ။)" 
-                        });
+               // ၄။ ယနေ့အတွက် Booking တင်သည့် အကြိမ်ရေကို စစ်ဆေးမည် (Admin သတ်မှတ်ထားသော အရေအတွက်)
+                db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'max_bookings_per_day'", (err, setRes) => {
+                    let maxBookings = 2; // Default ကို (၂) ကြိမ်ဟု သတ်မှတ်မည်
+                    if (!err && setRes.length > 0 && setRes[0].setting_value) {
+                        maxBookings = parseInt(setRes[0].setting_value);
                     }
 
-                    // ၅။ Token အရေအတွက် တွက်ချက်မည်
-                    const countSql = "SELECT COUNT(*) as count FROM appointments WHERE doctor_code = ? AND appointment_date = ?";
+                    const checkLimitSql = "SELECT COUNT(*) as total_booked FROM appointments WHERE patient_uid = ? AND appointment_date = ?";
                     
-                    db.query(countSql, [doctor_code, date], (err, countResult) => {
-                        if (err) return sendResponse({ success: false, message: "Token တွက်ချက်ရာတွင် အမှားဖြစ်နေပါသည်။" });
+                    db.query(checkLimitSql, [uid, date], (err, limitRes) => {
+                        if (err) return sendResponse({ success: false, message: "Database Error" });
 
-                        const nextNumber = countResult[0].count + 1;
-                        const tokenString = doctor_code + nextNumber.toString().padStart(3, '0');
+                        if (limitRes[0].total_booked >= maxBookings) {
+                            return sendResponse({ 
+                                success: false, 
+                                message: `⚠️ သင်သည် ယနေ့အတွက် Booking တင်ခွင့် (${maxBookings}) ကြိမ် ပြည့်သွားပါပြီ။\n(ထပ်မံတင်လိုပါက မနက်ဖြန်မှ ပြန်လည်ကြိုးစားပါ။)` 
+                            });
+                        }
 
-                        // ၆။ Booking ကို DataBase ထဲ သွင်းမည်
-                        const insertSql = "INSERT INTO appointments (patient_uid, doctor_code, appointment_date, appointment_time, status, token_number) VALUES (?, ?, ?, ?, 'waiting', ?)";
+                        // ၅။ Token အရေအတွက် တွက်ချက်မည်
+                        const countSql = "SELECT COUNT(*) as count FROM appointments WHERE doctor_code = ? AND appointment_date = ?";
                         
-                        db.query(insertSql, [uid, doctor_code, date, clinicStartTime, tokenString], (err) => {
-                            if (err) {
-                                console.error("Booking Insert Error:", err);
-                                return sendResponse({ success: false, message: "Booking တင်၍ မရပါ။" });
-                            }
+                        db.query(countSql, [doctor_code, date], (err, countResult) => {
+                            if (err) return sendResponse({ success: false, message: "Token တွက်ချက်ရာတွင် အမှားဖြစ်နေပါသည်။" });
 
-                            io.emit("update_queue");
-                            return sendResponse({ success: true, message: "Booking ကို အောင်မြင်စွာ တင်ပြီးပါပြီ။", token: tokenString });
+                            const nextNumber = countResult[0].count + 1;
+                            const tokenString = doctor_code + nextNumber.toString().padStart(3, '0');
+
+                            // ၆။ Booking ကို DataBase ထဲ သွင်းမည်
+                            const insertSql = "INSERT INTO appointments (patient_uid, doctor_code, appointment_date, appointment_time, status, token_number) VALUES (?, ?, ?, ?, 'waiting', ?)";
+                            
+                            db.query(insertSql, [uid, doctor_code, date, clinicStartTime, tokenString], (err) => {
+                                if (err) {
+                                    console.error("Booking Insert Error:", err);
+                                    return sendResponse({ success: false, message: "Booking တင်၍ မရပါ။" });
+                                }
+
+                                io.emit("update_queue");
+                                return sendResponse({ success: true, message: "Booking ကို အောင်မြင်စွာ တင်ပြီးပါပြီ။", token: tokenString });
+                            });
                         });
                     });
                 });
@@ -794,58 +802,41 @@ app.get("/api/admin/settings", (req, res) => {
 
 // Admin Settings Save API အပိုင်း
 app.post("/api/admin/settings", (req, res) => {
-    // 🌟 max_cancellations ကိုပါ လှမ်းဖမ်းမည်
-    const { qr_open, max_violations, max_cancellations } = req.body;
+    // 🌟 max_cancellations နှင့် max_bookings ကိုပါ လှမ်းဖမ်းမည်
+    const { qr_open, max_violations, max_cancellations, max_bookings } = req.body;
 
     const queries = [
         { key: 'qr_checkin_open_minutes', val: qr_open },
         { key: 'max_violations_before_lock', val: max_violations },
-        // 🌟 အသစ်ထည့်လိုက်သော စည်းကမ်း
-        { key: 'max_cancellations_per_day', val: max_cancellations } 
+        { key: 'max_cancellations_per_day', val: max_cancellations },
+        { key: 'max_bookings_per_day', val: max_bookings } // 💡 အသစ်
     ];
 
     let completed = 0;
     let hasError = false;
 
     queries.forEach(q => {
-        db.query("UPDATE system_settings SET setting_value = ? WHERE setting_key = ?", [q.val, q.key], (err) => {
-            if (err) hasError = true;
+        // q.val ရှိမှသာ (null မဟုတ်မှသာ) Update လုပ်မည်
+        if (q.val !== undefined) {
+            db.query("UPDATE system_settings SET setting_value = ? WHERE setting_key = ?", [q.val, q.key], (err) => {
+                if (err) hasError = true;
+                completed++;
+                if (completed === queries.length) {
+                    if (hasError) return res.json({ success: false, message: "Database Update Error!" });
+                    res.json({ success: true, message: "စနစ်၏ စည်းကမ်းချက်များကို အောင်မြင်စွာ ပြင်ဆင်လိုက်ပါပြီ!" });
+                }
+            });
+        } else {
             completed++;
             if (completed === queries.length) {
-                if (hasError) return res.json({ success: false, message: "Database Update Error!" });
                 res.json({ success: true, message: "စနစ်၏ စည်းကမ်းချက်များကို အောင်မြင်စွာ ပြင်ဆင်လိုက်ပါပြီ!" });
             }
-        });
+        }
     });
 });
 
 
 
-// (၂) Admin က ပြင်လိုက်တဲ့ Settings အသစ်တွေကို Save လုပ်မည့် API (POST)
-app.post("/api/admin/settings", (req, res) => {
-    // 🌟 no_show ကို လက်မခံတော့ပါ
-    const { qr_open, max_violations } = req.body;
-
-    const queries = [
-        { key: 'qr_checkin_open_minutes', val: qr_open },
-        { key: 'max_violations_before_lock', val: max_violations }
-    ];
-
-    let completed = 0;
-    let hasError = false;
-
-    // Table ထဲက Data (၂) ကြောင်းကို တစ်လှည့်စီ Update လုပ်မည်
-    queries.forEach(q => {
-        db.query("UPDATE system_settings SET setting_value = ? WHERE setting_key = ?", [q.val, q.key], (err) => {
-            if (err) hasError = true;
-            completed++;
-            if (completed === queries.length) {
-                if (hasError) return res.json({ success: false, message: "Database Update Error!" });
-                res.json({ success: true, message: "စနစ်၏ စည်းကမ်းချက်များကို အောင်မြင်စွာ ပြင်ဆင်လိုက်ပါပြီ!" });
-            }
-        });
-    });
-});
 
 // ==========================================
 // Admin - Staff Management API (ဆရာဝန်နာမည်ပါ ဆွဲထုတ်မည်)

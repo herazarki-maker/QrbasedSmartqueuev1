@@ -215,7 +215,11 @@
                     <input type="number" id="setting_max_violations" class="setting-input" placeholder="e.g. 2">
                     <small>Account Lock မချမီ ခွင့်ပြုမည့် ဖောက်ဖျက်မှု အကြိမ်အရေအတွက်</small>
                 </div>
-
+                <div class="input-group">
+                       <label>Max Bookings per day:</label>
+                       <input type="number" id="maxBookings" class="setting-input" placeholder="e.g. 2">
+                       <small>လူနာတစ်ဦးလျှင် တစ်ရက်အတွင်း အများဆုံး Booking တင်ခွင့်</small>
+              </div>
                 <button class="action-btn" onclick="saveSystemSettings()" style="background: #3b82f6; color: white; padding: 10px 20px; font-size: 14px; margin-top: 10px;">
                     <i class="fas fa-save"></i> Save Changes
                 </button>
@@ -574,6 +578,8 @@
                         if (s.setting_key === 'qr_checkin_open_minutes') document.getElementById('setting_qr_open').value = s.setting_value;
                         if (s.setting_key === 'max_violations_before_lock') document.getElementById('setting_max_violations').value = s.setting_value;
                         // 🌟 Cancel အကြိမ်အရေအတွက်ကိုပါ အလိုအလျောက် ဖြည့်ပေးမည်
+                        // 🌟 Booking အကြိမ်အရေအတွက်ကိုပါ အလိုအလျောက် ဖြည့်ပေးမည်
+                        if (s.setting_key === 'max_bookings_per_day') document.getElementById('maxBookings').value = s.setting_value;
                         if (s.setting_key === 'max_cancellations_per_day') document.getElementById('maxCancellations').value = s.setting_value;
                     });
                 }
@@ -586,7 +592,7 @@
             const qrOpenVal = document.getElementById("setting_qr_open").value; 
             const maxViolationsVal = document.getElementById("setting_max_violations").value;
             const maxCancellationsVal = document.getElementById("maxCancellations").value; 
-
+            const maxBookingsVal = document.getElementById("maxBookings").value;
             try {
                 const response = await fetch("/api/admin/settings", {
                     method: "POST",
@@ -594,7 +600,8 @@
                     body: JSON.stringify({
                         qr_open: qrOpenVal,
                         max_violations: maxViolationsVal,
-                        max_cancellations: maxCancellationsVal 
+                        max_cancellations: maxCancellationsVal,
+                         max_bookings: maxBookingsVal
                     })
                 });
 
