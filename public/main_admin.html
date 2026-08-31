@@ -254,7 +254,7 @@
            <!-- 🌟 Role Group ကို အဖွင့်အပိတ် လုပ်နိုင်ရန် id ပေးထားသည် -->
            <div class="form-group" id="staffRoleGroup">
                 <label>Role:</label>
-                <select id="staffRole" class="setting-input">
+                <select id="staffRole" class="setting-input" onchange="toggleDoctor()">
                     <option value="Counter">Counter</option>
                     <option value="Doctor Assistant">Doctor Assistant</option>
                 </select>
@@ -1113,6 +1113,15 @@
                     console.error("Password Reset Error:", error);
                     showSmartAlert("Network Error ကြောင့် ပြောင်းလဲ၍မရပါ။", "error");
                 }
+            }
+        }
+        // 🌟 Role ပြောင်းလိုက်တိုင်း Doctor Dropdown ကို အလိုအလျောက် အဖွင့်အပိတ် လုပ်ပေးမည့် Function
+        function toggleDoctor() {
+            const role = document.getElementById('staffRole').value;
+            if (role === 'Doctor Assistant') {
+                document.getElementById('doctorSelectGroup').style.display = 'block';
+            } else {
+                document.getElementById('doctorSelectGroup').style.display = 'none';
             }
         }
            
