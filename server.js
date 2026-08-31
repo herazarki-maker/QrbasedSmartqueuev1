@@ -20,6 +20,8 @@ app.use(express.json());
 const PORT = 3000;
 // 💡 (အသစ်) Doctor များ Queue စ/မစ မှတ်သားထားမည့် နေရာ
 const activeQueues = {};
+// 💡 (အသစ်) Booking အထပ်ထပ် မဝင်အောင် ထိန်းပေးမည့် နေရာ
+const bookingLocks = new Set();
 // public folder ကို browser က access လုပ်ခွင့်ပေးမယ်
 app.use(express.static("public"));
 
