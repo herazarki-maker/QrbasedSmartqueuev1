@@ -41,7 +41,7 @@
                     const formattedDate = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
                     // 💡 Prescription မရှိခဲ့လျှင် ပြမည့်စာသား
-                    const pText = record.prescription ? record.prescription : "ဆေးစာ မှတ်တမ်း မရှိပါ။";
+                    const pText = record.prescription ? record.prescription : "ဆေးမှတ်တမ်းမရှိပါ။";
 
                     const card = document.createElement("div");
                     card.className = "history-card";
